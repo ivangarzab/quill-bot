@@ -15,6 +15,10 @@ TOKEN = os.getenv("TOKEN")
 KEY_WEATHER = os.getenv("KEY_WEATHER")
 KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 
+# Session details
+CURRENT_BOOK = "Farenheit 451"
+DUE_DATE = "End of MARCH!"
+
 if not TOKEN:
     raise ValueError("TOKEN environment variable is not set.")
 print(f'~~~~~~Got Discord TOKEN={TOKEN}~~~~~~')
@@ -57,21 +61,7 @@ async def on_message(message):
 
     ### Philosophy is done best in community
     if 'together' in message.content:
-      messageToSend = f'Philosophy is done best in community.\n\t\t-Jeremy Reid'
-    if 'someone wants' in msgFormat:
-      messageToSend = f'Philosophy is done best in community.\n\t\t-Jeremy Reid'
-    if 'who wants' in msgFormat:
-      messageToSend = f'Philosophy is done best in community.\n\t\t-Jeremy Reid'
-    if 'share' in msgFormat:
-      go = random.randint(1, 2)
-      if go == 1:
-        messageToSend = f'Philosophy is done best in community.\n\t\t-Jeremy Reid'
-    
-    # Papers
-    if 'final paper' in msgFormat:
-      messageToSend = f'Good papers grow themselves.'
-    if 'papers' in msgFormat:
-      messageToSend = f'Good papers grow themselves.'
+      messageToSend = f'Reading is done best in community.'
 
     # Command redirects
     if 'weather' in msgFormat:
@@ -111,11 +101,14 @@ def get_weather():
       message += "; and it is raining!"
     return message
 
-############################# REMINDER MESSAGES #############################
+
+############################# LOOPING MESSAGES #############################
 # Define the async task running every hour that will send reminder messages
 @tasks.loop(hours=1)
 async def send_reminder_message():
   print(f'~~~~~~Running send_reminder_message()~~~~~~')
+  reminders = [f'10 pages a day!', 'Have you read today?', '¿Ya leiste hoy?', '¿Cuantas paginas has leido hoy?']
+
   # Create a timezone object for UTC
   utc_timezone = pytz.timezone('UTC')
   # Define the SF timezone (Pacific Standard Time)
@@ -123,22 +116,21 @@ async def send_reminder_message():
   now_utc = datetime.utcnow()
   # Convert UTC time to LA time
   now_pacific = now_utc.replace(tzinfo=pytz.utc).astimezone(sf_timezone)
-  # Check if it's Tuesday for the wishing good luck in class
-  if now_pacific.weekday() == calendar.TUESDAY:
-    if now_pacific.hour == 15: # Check if current hour matches target hour
-      channel = client.get_channel(DEFAULT_CHANNEL)
-      if channel:
-        await channel.send("Have fun in class!")
-  # Check if it's Monday for the homework reminder
-  elif now_pacific.weekday() == calendar.MONDAY:
-    if now_pacific.hour == 20: # Check if current hour matches target hour
-      channel = client.get_channel(DEFAULT_CHANNEL)
-      if channel:
-        await channel.send("Don't forget to submit in your homework tonight!")
+
+  # Get a random number, and only send message if it falls on it
+  execute_time = random.randint(0, 23)
+  if now_pacific.hour == execute_time:
+    await channel.send(random.choice(reminders))
   else:
     print(f"Ran send_reminder_message() at {now_pacific}, but there's nothing to shout.")
 
+
 ############################# CUSTOM COMMANDS #############################
+@client.command()
+async def help(ctx: commands.Context):
+  print("Got a help command")
+  await ctx.send(f"Current list of commands:\n\t- rolldice\n\t- flipcoin\n\t- choose <options>\n\t- weather (SF only)\n\t- currentBook\n\t- dueDate\n\t- currentSession\nall commands must start with a '!' prefix")
+
 @client.command()
 async def rolldice(ctx: commands.Context):
     print(f"Got a rolldice command")
@@ -173,6 +165,22 @@ async def weather(ctx: commands.Context):
     weather = get_weather()
     print(f"~~~{weather}~~~")
     await ctx.send(weather)
+
+@client.command()
+async def currentBook(ctx: commands.Context):
+    print(f"Got a currentBook command")
+    await ctx.send(f"Current book: {CURRENT_BOOK}")
+
+@client.command()
+async def dueDate(ctx: commands.Context):
+    print(f"Got a dueDate command")
+    await ctx.send(f"Session due date: {DUE_DATE}")
+
+@client.command()
+async def currentSession(ctx: commands.Context):
+    print(f"Got a currentSession command")
+    await ctx.send(f"Current session details: \n\tCurrent book:{CURRENT_BOOK} \n\tSession due date: {DUE_DATE}")
+
 
 ################################# OPENAI ##################################
 def get_openai_response(prompt):
