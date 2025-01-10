@@ -9,7 +9,7 @@ import calendar
 import requests
 import openai
 
-DEFAULT_CHANNEL = 1288337522027401256
+DEFAULT_CHANNEL = 1327357851827572872
 # Get the TOKEN from the environment variable
 TOKEN = os.getenv("TOKEN")
 KEY_WEATHER = os.getenv("KEY_WEATHER")
@@ -40,9 +40,8 @@ async def on_message(message):
 
     print(f'Got a new message=\'{message.content}\'\n\tguild={message.guild}\n\tauthor={message.author.name}')
 
-    phillGreetings = [f'I am Phill', '👀']
+    phillGreetings = [f'I am Quill', '👀']
     phillGreetReactions = [f'🙃', f'👽', f'🍄', f'🌙', f'🔥', f'🎗️']
-    jeremyShouts = [f"I think Jeremy is cool", f"Listen to your professors!"]
 
     # The message to be sent out to the message.channel
     messageToSend = ""
@@ -56,11 +55,6 @@ async def on_message(message):
         print(f"Adding reaction to message: {reaction}")
         await message.add_reaction(reaction)
 
-    # Jeremy responses, and his quotes
-    if 'jeremy' in msgFormat:
-      go = random.randint(1, 2)
-      if go == 1:
-        messageToSend = random.choice(jeremyShouts)
     ### Philosophy is done best in community
     if 'together' in message.content:
       messageToSend = f'Philosophy is done best in community.\n\t\t-Jeremy Reid'
@@ -167,9 +161,11 @@ async def choose(ctx: commands.Context, *, argments):
     if rand == 1:
       await ctx.send(f"{result}, I choose you!")
     elif rand == 2:
-      await ctx.send(f"I have selected {result}")
+      await ctx.send(f"I have selected {result}.")
+    elif rand == 3:
+      await ctx.send(f"{result}. I have spoken.")
     else:
-      await ctx.send(f"The winner is, {result}")
+      await ctx.send(f"The winner is, {result}!")
 
 @client.command()
 async def weather(ctx: commands.Context):
