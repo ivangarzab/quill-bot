@@ -127,8 +127,8 @@ async def send_reminder_message():
 
 ############################# CUSTOM COMMANDS #############################
 @client.command()
-async def help(ctx: commands.Context):
-  print("Got a help command")
+async def commands(ctx: commands.Context):
+  print("Got a commands command")
   await ctx.send(f"Current list of commands:\n\t- rolldice\n\t- flipcoin\n\t- choose <options>\n\t- weather (SF only)\n\t- currentBook\n\t- dueDate\n\t- currentSession\nall commands must start with a '!' prefix")
 
 @client.command()
