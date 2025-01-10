@@ -19,9 +19,6 @@ KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 CURRENT_BOOK = "Farenheit 451"
 DUE_DATE = "End of MARCH!"
 
-# Convenience strings
-boldStart = '\033[1m'
-boldEnd = '\033[0m'
 
 if not TOKEN:
     raise ValueError("TOKEN environment variable is not set.")
@@ -173,7 +170,7 @@ async def weather(ctx: commands.Context):
 @client.command()
 async def currentBook(ctx: commands.Context):
     print(f"Got a currentBook command")
-    await ctx.send(f"Current book: {boldStart}{CURRENT_BOOK}{boldEnd}")
+    await ctx.send(f"Current book: \033[1m{CURRENT_BOOK}\033[0m")
 
 @client.command()
 async def dueDate(ctx: commands.Context):
