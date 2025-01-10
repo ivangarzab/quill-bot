@@ -129,7 +129,7 @@ async def send_reminder_message():
 @client.command()
 async def usage(ctx: commands.Context):
     print(f"Got a usage command")
-    await ctx.send(f"Current list of commands:\n\t- rolldice\n\t- flipcoin\n\t- choose <options>\n\t- weather (SF only)\n\t- currentBook\n\t- dueDate\n\t- currentSession\nall commands must start with a '!' prefix")
+    await ctx.send(f"Current list of commands:\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\nall commands must start with a '!' prefix")
 
 @client.command()
 async def rolldice(ctx: commands.Context):
@@ -179,7 +179,7 @@ async def dueDate(ctx: commands.Context):
 @client.command()
 async def currentSession(ctx: commands.Context):
     print(f"Got a currentSession command")
-    await ctx.send(f"Current session details: \n\tCurrent book:{CURRENT_BOOK} \n\tSession due date: {DUE_DATE}")
+    await ctx.send(f"Current session details: \n\tCurrent book: {CURRENT_BOOK} \n\tSession due date: {DUE_DATE}")
 
 
 ################################# OPENAI ##################################
