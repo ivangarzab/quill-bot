@@ -19,6 +19,10 @@ KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 CURRENT_BOOK = "Farenheit 451"
 DUE_DATE = "End of MARCH!"
 
+# Convenience strings
+boldStart = '\033[1m'
+boldEnd = '\033[0m'
+
 if not TOKEN:
     raise ValueError("TOKEN environment variable is not set.")
 print(f'~~~~~~Got Discord TOKEN={TOKEN}~~~~~~')
@@ -44,8 +48,8 @@ async def on_message(message):
 
     print(f'Got a new message=\'{message.content}\'\n\tguild={message.guild}\n\tauthor={message.author.name}')
 
-    phillGreetings = [f'I am Quill', '👀']
-    phillGreetReactions = [f'🙃', f'👽', f'🍄', f'🌙', f'🔥', f'🎗️']
+    greetings = [f'I am Quill', '👀']
+    greetReactions = [f'🙃', f'👽', f'🍄', f'🌙', f'🔥', f'🎗️']
 
     # The message to be sent out to the message.channel
     messageToSend = ""
@@ -53,9 +57,9 @@ async def on_message(message):
     if client.user in message.mentions:
       go = random.randint(1, 10)
       if go < 4:
-        messageToSend = random.choice(phillGreetings)
+        messageToSend = random.choice(greetings)
       elif go > 5:
-        reaction = random.choice(phillGreetReactions)
+        reaction = random.choice(greetReactions)
         print(f"Adding reaction to message: {reaction}")
         await message.add_reaction(reaction)
 
@@ -85,7 +89,7 @@ async def on_member_join(member):
     channel = client.get_channel(DEFAULT_CHANNEL)
     if not channel:
         return
-    await channel.send(f"Welcome to PHIL 715, {member}!")
+    await channel.send(f"Welcome, {member}!")
 
 def get_weather():
     url = f"https://api.weatherbit.io/v2.0/current?city=San%20Francisco&state&country=US&key={KEY_WEATHER}"
@@ -169,7 +173,7 @@ async def weather(ctx: commands.Context):
 @client.command()
 async def currentBook(ctx: commands.Context):
     print(f"Got a currentBook command")
-    await ctx.send(f"Current book: {CURRENT_BOOK}")
+    await ctx.send(f"Current book: " + boldStart + {CURRENT_BOOK} + boldEnd)
 
 @client.command()
 async def dueDate(ctx: commands.Context):
