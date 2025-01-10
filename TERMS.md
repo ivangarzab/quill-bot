@@ -1,8 +1,8 @@
-## **Terms of Use for Phill the Philosophy Bot**
+## **Terms of Use for Quill the Librarian**
 
 ### **1. Introduction**
 
-**Phill the Philosophy Bot** (the "Bot") is a Discord bot designed to entertain and offer insignifcant insight in students servers of SFSU's philosophy courses. 
+**Quill the Librarian** (the "Bot") is a Discord bot designed to serve as a companion of book club. 
 
 By using the Bot, you agree to these Terms of Use ("Terms").
 

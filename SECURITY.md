@@ -1,8 +1,8 @@
-## **Privacy Policy for Phill the Philosophy Bot**
+## **Privacy Policy for Quill the Librarian**
 
 ### **1. Introduction**
 
-Phill the Philosophy Bot (the "Bot") is a Discord bot designed to entertain and offer insignifcant insight in students servers of SFSU's philosophy courses. This Privacy Policy outlines how we collect, use, and protect your personal information when you interact with the Bot.
+Quill the Librarian (the "Bot") is a Discord bot designed to serve as a companion to book club. This Privacy Policy outlines how we collect, use, and protect your personal information when you interact with the Bot.
 
 ### **2. Information We Collect**
 
