@@ -106,29 +106,29 @@ def get_weather():
 # Define the async task running every hour that will send reminder messages
 @tasks.loop(hours=1)
 async def send_reminder_message():
-  print(f'~~~~~~Running send_reminder_message()~~~~~~')
-  reminders = [f'10 pages a day!', 'Have you read today?', '¿Ya leiste hoy?', '¿Cuantas paginas has leido hoy?']
+    print(f'~~~~~~Running send_reminder_message()~~~~~~')
+    reminders = [f'10 pages a day!', 'Have you read today?', '¿Ya leiste hoy?', '¿Cuantas paginas has leido hoy?']
 
-  # Create a timezone object for UTC
-  utc_timezone = pytz.timezone('UTC')
-  # Define the SF timezone (Pacific Standard Time)
-  sf_timezone = pytz.timezone('US/Pacific')
-  now_utc = datetime.utcnow()
-  # Convert UTC time to LA time
-  now_pacific = now_utc.replace(tzinfo=pytz.utc).astimezone(sf_timezone)
+    # Create a timezone object for UTC
+    utc_timezone = pytz.timezone('UTC')
+    # Define the SF timezone (Pacific Standard Time)
+    sf_timezone = pytz.timezone('US/Pacific')
+    now_utc = datetime.utcnow()
+    # Convert UTC time to LA time
+    now_pacific = now_utc.replace(tzinfo=pytz.utc).astimezone(sf_timezone)
 
-  # Get a random number, and only send message if it falls on it
-  execute_time = random.randint(0, 23)
-  if now_pacific.hour == execute_time:
-    await channel.send(random.choice(reminders))
-  else:
-    print(f"Ran send_reminder_message() at {now_pacific}, but there's nothing to shout.")
+    # Get a random number, and only send message if it falls on it
+    execute_time = random.randint(0, 23)
+    if now_pacific.hour == execute_time:
+      await channel.send(random.choice(reminders))
+    else:
+      print(f"Ran send_reminder_message() at {now_pacific}, but there's nothing to shout.")
 
 
 ############################# CUSTOM COMMANDS #############################
 @client.command()
 async def commands(ctx: commands.Context):
-    print("Got a commands command")
+    print(f"Got a commands command")
     await ctx.send(f"Current list of commands:\n\t- rolldice\n\t- flipcoin\n\t- choose <options>\n\t- weather (SF only)\n\t- currentBook\n\t- dueDate\n\t- currentSession\nall commands must start with a '!' prefix")
 
 @client.command()
