@@ -64,9 +64,9 @@ class BookClubBot(commands.Bot):
     async def setup_hook(self):
         self.send_reminder_message.start()
         
-    async def get_weather(self) -> str:
-        """Fetch current weather for San Francisco."""
-        url = f"https://api.weatherbit.io/v2.0/current?city=San%20Francisco&state&country=US&key={self.KEY_WEATHER}"
+    async def get_weather(self, location: str) -> str:
+        """Fetch current weather for a given location."""
+        url = f"https://api.weatherbit.io/v2.0/current?city={location}&key={self.KEY_WEATHER}"
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -77,7 +77,7 @@ class BookClubBot(commands.Bot):
             city = data['data'][0]['city_name']
             description = data['data'][0]['weather']['description']
             
-            message = f"Current weather in {city}: {temp_f:.1f}°F ({description})"
+            message = f"Current weather in {city}: {temp_f:.1f}\u00b0F ({description})"
             if "rain" in description.lower():
                 message += "; and it is raining!"
             return message
@@ -305,11 +305,11 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def weather(ctx: commands.Context):
-            weather_info = await self.get_weather()
+        async def weather(ctx: commands.Context, *, location: str):
+            weather_info = await self.get_weather(location)
             
             embed = discord.Embed(
-                title="🌤 San Francisco Weather",
+                title=f"\ud83c\udf24 Weather for {location.title()}",
                 description=weather_info,
                 color=self.colors["info"]
             )
