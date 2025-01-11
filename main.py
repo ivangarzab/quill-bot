@@ -29,6 +29,11 @@ class BookClubBot(commands.Bot):
             "book": {
                 "title": "Farenheit 451",
                 "author": "Ray Bradbury"
+            },
+            "discussions": {
+                "amount": 3,
+                "frequency": "End of month, for 3 months",
+                "expectation": "3 chapters per session"
             }
         }
         
@@ -264,6 +269,34 @@ class BookClubBot(commands.Bot):
             embed.add_field(
                 name="Due Date",
                 value=f"{self.session['due_date']}",
+                inline=False
+            )
+            
+            embed.set_footer(text="Keep reading! 📖")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def discussionDetails(ctx: commands.Context):
+            embed = discord.Embed(
+                title="📚 Book Discussion Details",
+                color=self.colors["info"]
+            )
+            
+            embed.add_field(
+                name="Number of Discussions",
+                value=f"#{self.session['discussions']['amount']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Approximate Date",
+                value=f"{self.session['discussions']['frequency']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Progress Expectation",
+                value=f"{self.session['discussions']['expectation']}",
                 inline=False
             )
             
