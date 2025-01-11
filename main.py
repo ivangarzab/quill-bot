@@ -77,7 +77,11 @@ class BookClubBot(commands.Bot):
             city = data['data'][0]['city_name']
             description = data['data'][0]['weather']['description']
             
-            message = f"Current weather in {city}: {temp_f:.1f}\u00b0F ({description})"
+            message = (
+                f"Current weather in **{city}**:\n"
+                f"Temperature: **{temp_f:.1f}\u00b0F / {temp_c:.1f}\u00b0C**\n"
+                f"Condition: {description}"
+            )
             if "rain" in description.lower():
                 message += "; and it is raining!"
             return message
