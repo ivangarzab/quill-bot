@@ -130,19 +130,19 @@ async def send_reminder_message():
 @client.command()
 async def usage(ctx: commands.Context):
     print(f"Got a usage command")
-    await ctx.send(f"**Current list of commands:**\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\n*NOTE: all commands must start with a '!' prefix*")
+    await ctx.send(f"**Current list of commands:**\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\n\n*NOTE: all commands must start with a '!' prefix*")
 
 @client.command()
 async def rolldice(ctx: commands.Context):
     print(f"Got a rolldice command")
     result = random.randint(1, 6)
-    await ctx.send(f"You rolled a **{result}**!")
+    await ctx.send(f"You rolled a: **{result}**!")
 
 @client.command()
 async def flipcoin(ctx: commands.Context):
     print(f"Got a flipcoin command")
     result = random.choice(["HEADS", "TAILS"])
-    await ctx.send(f"You flipped a coin and got **{result}**!")
+    await ctx.send(f"You flipped a coin and got: **{result}**!")
 
 @client.command()
 async def choose(ctx: commands.Context, *, argments):
@@ -158,7 +158,7 @@ async def choose(ctx: commands.Context, *, argments):
     elif rand == 3:
       await ctx.send(f"**{result}**. I have spoken.")
     else:
-      await ctx.send(f"The winner is, **{result}**!")
+      await ctx.send(f"The winner is: **{result}**!")
 
 @client.command()
 async def weather(ctx: commands.Context):
@@ -190,7 +190,7 @@ async def funfact(ctx: commands.Context):
     'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.', 'Avid reading throughout a lifetime may reduce the rate of memory decline by as much as 32%.', 'Up to 50 books can be made from 1 tree.', 'The most sold book is the Bible.',
     'A study found that you are 2 ½ times less likely to be diagnosed with Alzheimer\’s in later life if you read regularly.', 'Bibliosmia is the word for loving the smell of old books.', 'There are around 130 million published books.']
     result = random.choice(facts)
-    await ctx.send(f"Fun Fact: {result}")
+    await ctx.send(f"**Fun Fact**:\n{result}")
 
 
 ################################# OPENAI ##################################
