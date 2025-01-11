@@ -286,13 +286,13 @@ class BookClubBot(commands.Bot):
             embed.add_field(
                 name="Number of Discussions",
                 value=f"#{self.session['discussions']['amount']}",
-                inline=True
+                inline=False
             )
             
             embed.add_field(
                 name="Approximate Date",
                 value=f"{self.session['discussions']['frequency']}",
-                inline=True
+                inline=False
             )
             
             embed.add_field(
@@ -301,7 +301,7 @@ class BookClubBot(commands.Bot):
                 inline=False
             )
             
-            embed.set_footer(text="Keep reading! 📖")
+            embed.set_footer(text="Don't stop reading! 📖")
             await ctx.send(embed=embed)
 
         @self.command()
