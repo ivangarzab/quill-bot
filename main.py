@@ -167,16 +167,16 @@ class BookClubBot(commands.Bot):
         @self.command()
         async def usage(ctx: commands.Context):
             embed = discord.Embed(
-                title="📚 Book Club Bot Commands",
+                title="📚 Quill's Commands",
                 description="Here's everything I can help you with!",
                 color=self.colors["info"]
             )
             
             embed.add_field(
                 name="📖 Reading Commands",
-                value="• `!currentBook` - Show current book\n"
+                value="• `!book` - Show current book\n"
                       "• `!dueDate` - Show due date\n"
-                      "• `!currentSession` - Show all session details",
+                      "• `!sessionDetails` - Show all session details",
                 inline=False
             )
             
@@ -217,7 +217,7 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def currentBook(ctx: commands.Context):
+        async def book(ctx: commands.Context):
             embed = discord.Embed(
                 title="📚 Current Book",
                 description=f"**{self.session['book']['title']}**",
@@ -237,7 +237,7 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def currentSession(ctx: commands.Context):
+        async def sessionDetails(ctx: commands.Context):
             embed = discord.Embed(
                 title="📚 Current Session Details",
                 color=self.colors["info"]
@@ -246,7 +246,7 @@ class BookClubBot(commands.Bot):
             embed.add_field(
                 name="Session Number",
                 value=f"#{self.session['number']}",
-                inline=True
+                inline=False
             )
             
             embed.add_field(
