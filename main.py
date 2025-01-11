@@ -181,7 +181,7 @@ class BookClubBot(commands.Bot):
                 name="📖 Reading Commands",
                 value="• `!book` - Show current book\n"
                       "• `!dueDate` - Show due date\n"
-                      "• `!sessionDetails` - Show all session details\n"
+                      "• `!session` - Show all session details\n"
                       "• `!discussions` - Show the discussion details",
                 inline=False
             )
@@ -243,7 +243,7 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def sessionDetails(ctx: commands.Context):
+        async def session(ctx: commands.Context):
             embed = discord.Embed(
                 title="📚 Current Session Details",
                 color=self.colors["info"]
@@ -277,7 +277,7 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def discussionDetails(ctx: commands.Context):
+        async def discussions(ctx: commands.Context):
             embed = discord.Embed(
                 title="📚 Book Discussion Details",
                 color=self.colors["info"]
