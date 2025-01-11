@@ -170,7 +170,7 @@ async def weather(ctx: commands.Context):
 @client.command()
 async def currentBook(ctx: commands.Context):
     print(f"Got a currentBook command")
-    await ctx.send(f"Current book: \033[1m {CURRENT_BOOK} \033[0m")
+    await ctx.send(f"Current book: **{CURRENT_BOOK}**")
 
 @client.command()
 async def dueDate(ctx: commands.Context):
