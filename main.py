@@ -15,8 +15,8 @@ TOKEN = os.getenv("TOKEN")
 KEY_WEATHER = os.getenv("KEY_WEATHER")
 KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 
-# Session details
-SESSION_NO = 1
+# Session details TODO: Move into database
+SESSION_NO = 0
 CURRENT_BOOK = "Farenheit 451"
 DUE_DATE = "End of MARCH!"
 
@@ -46,12 +46,13 @@ async def on_message(message):
 
     print(f'Got a new message=\'{message.content}\'\n\tguild={message.guild}\n\tauthor={message.author.name}')
 
-    greetings = [f'I am Quill', '👀']
-    greetReactions = [f'🙃', f'👽', f'🍄', f'🌙', f'🔥', f'🎗️']
+    greetings = [f'I am Quill', '👀', f'Let\'s get reading!']
+    greetReactions = [f'⚡️', f'👽', f'🍄', f'🌙', f'🔥', f'👾', f'🦉', f'🐺', f'🍁']
 
     # The message to be sent out to the message.channel
     messageToSend = ""
 
+    # React to a mention of this bot
     if client.user in message.mentions:
       go = random.randint(1, 10)
       if go < 4:
@@ -77,6 +78,11 @@ async def on_message(message):
     if messageToSend:
       print(f"Sending message: {messageToSend}")
       await message.channel.send(messageToSend)
+
+    # Add random reaction to any message
+    randomReaction = random.choice(greetReactions)
+    print(f"Adding random reaction to message: {randomReaction}")
+    await message.add_reaction(randomReaction)
 
     # This line is necessary to process commands within on_message()
     await client.process_commands(message) 
