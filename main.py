@@ -80,7 +80,7 @@ async def on_message(message):
       await message.channel.send(messageToSend)
 
     # Add random reaction to any message
-    if random.randint(1, 10) < 5:
+    if random.randint(1, 10) < 4:
       randomReaction = random.choice(greetReactions)
       print(f"Adding random reaction to message: {randomReaction}")
       await message.add_reaction(randomReaction)
