@@ -183,10 +183,10 @@ class BookClubBot(commands.Bot):
             
             embed.add_field(
                 name="📖 Reading Commands",
-                value="• `!book` - Show current book\n"
-                      "• `!duedate` - Show due date\n"
-                      "• `!session` - Show all session details\n"
-                      "• `!discussions` - Show the discussion details",
+                value="• `!session` - Show all session details\n"
+                      "• `!book` - Show current book details\n"
+                      "• `!duedate` - Show the session's due date\n"
+                      "• `!discussions` - Show the session's discussion details",
                 inline=False
             )
             
@@ -335,13 +335,17 @@ class BookClubBot(commands.Bot):
                 'Up to 50 books can be made from 1 tree.',
                 'Bibliosmia is the word for loving the smell of old books.'
             ]
+            closers = [
+              'Did you know? 🤓',
+              'Riddle me this ⁉️'
+            ]
             
             embed = discord.Embed(
                 title="📚 Book Fun Fact",
                 description=random.choice(facts),
                 color=self.colors["purp"]
             )
-            embed.set_footer(text="Did you know? 🤓")
+            embed.set_footer(text=random.choice(closers))
             await ctx.send(embed=embed)
 
         @self.command()
