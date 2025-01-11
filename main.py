@@ -17,8 +17,9 @@ KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 
 # Session details TODO: Move into database
 SESSION_NO = 0
-CURRENT_BOOK = "Farenheit 451"
 DUE_DATE = "End of MARCH!"
+BOOK_TITLE = "Farenheit 451"
+BOOK_AUTHOR = "Ray Bradbury"
 
 
 if not TOKEN:
@@ -185,7 +186,7 @@ async def weather(ctx: commands.Context):
 @client.command()
 async def currentBook(ctx: commands.Context):
     print(f"Got a currentBook command")
-    await ctx.send(f"Current book: **{CURRENT_BOOK}**")
+    await ctx.send(f"Current book: **{BOOK_TITLE} by {BOOK_AUTHOR}**")
 
 @client.command()
 async def dueDate(ctx: commands.Context):
@@ -195,7 +196,7 @@ async def dueDate(ctx: commands.Context):
 @client.command()
 async def currentSession(ctx: commands.Context):
     print(f"Got a currentSession command")
-    await ctx.send(f"Current session details: \n\tCurrent book: **{CURRENT_BOOK}** \n\tSession due date: **{DUE_DATE}**")
+    await ctx.send(f"Current session details: \n\tSession number: **{SESSION_NO}** \n\tSession due date: **{DUE_DATE}** \n\tCurrent book: **{BOOK_TITLE} by {BOOK_AUTHOR}**")
 
 @client.command()
 async def funfact(ctx: commands.Context):
