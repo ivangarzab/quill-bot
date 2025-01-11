@@ -105,12 +105,22 @@ class BookClubBot(commands.Bot):
     async def send_reminder_message(self):
         """Send daily reading reminders."""
         reminders = [
-            'Try to read a mininum of 10 pages per day!',
+            'Try to read a minimum of 10 pages per day!',
             'Have you read today?',
             'How many pages have you read today?',
             'If you read 20 minutes a day, you would have read 1.8 million words in a year.',
-            'Have you read? I\'m watching 🦉'
-        ]
+            'Have you read? I\'m watching 🦉',
+            'Books are portals to new worlds—have you stepped through one today? 🌍',
+            'A chapter a day keeps the boredom away!',
+            'Remember, even one page is progress! 📖',
+            'Reading expands your mind. What did you learn today?',
+            'Take a moment to escape reality with a book!',
+            'A few pages a day builds a lifetime of knowledge.',
+            'Consistency is key! 💪 Keep turning those pages.',
+            'Your book is waiting for you—don\'t keep it lonely!',
+            'Reading is self-care. ☯️ Take some time for yourself today!',
+            'Every page you read brings you closer to your goal. 🎯'
+    ]
         
         sf_timezone = pytz.timezone('US/Pacific')
         now_pacific = datetime.now(tz=sf_timezone)
@@ -300,7 +310,8 @@ class BookClubBot(commands.Bot):
                 color=self.colors["info"]
             )
             
-            embed.timestamp = datetime.utcnow()
+            sf_timezone = pytz.timezone('US/Pacific')
+            embed.timestamp = datetime.now(tz=sf_timezone)
             embed.set_footer(text="Weather information last updated")
             
             await ctx.send(embed=embed)
