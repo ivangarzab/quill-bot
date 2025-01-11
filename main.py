@@ -80,9 +80,10 @@ async def on_message(message):
       await message.channel.send(messageToSend)
 
     # Add random reaction to any message
-    randomReaction = random.choice(greetReactions)
-    print(f"Adding random reaction to message: {randomReaction}")
-    await message.add_reaction(randomReaction)
+    if random.randint(1, 10) < 5:
+      randomReaction = random.choice(greetReactions)
+      print(f"Adding random reaction to message: {randomReaction}")
+      await message.add_reaction(randomReaction)
 
     # This line is necessary to process commands within on_message()
     await client.process_commands(message) 
