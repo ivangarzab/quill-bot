@@ -118,7 +118,7 @@ def get_weather():
 @tasks.loop(hours=1)
 async def send_reminder_message():
     print(f'~~~~~~Running send_reminder_message()~~~~~~')
-    reminders = [f'10 pages a day!', 'Have you read today?', '¿Ya leiste hoy?', '¿Cuantas paginas has leido hoy?', 'If you read 20 minutes a day, you would have read 1.8 million words in a year.']
+    reminders = [f'10 pages a day!', 'Have you read today?', 'How many pages have you read today?', 'If you read 20 minutes a day, you would have read 1.8 million words in a year.']
 
     # Create a timezone object for UTC
     utc_timezone = pytz.timezone('UTC')
@@ -129,8 +129,7 @@ async def send_reminder_message():
     now_pacific = now_utc.replace(tzinfo=pytz.utc).astimezone(sf_timezone)
 
     # Get a random number, and only send message if it falls on it
-    execute_time = random.randint(0, 23)
-    if now_pacific.hour == execute_time:
+    if now_pacific.hour == 17:
       await channel.send(random.choice(reminders))
     else:
       print(f"Ran send_reminder_message() at {now_pacific}, but there's nothing to shout.")
