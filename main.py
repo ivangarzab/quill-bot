@@ -108,7 +108,7 @@ def get_weather():
 @tasks.loop(hours=1)
 async def send_reminder_message():
     print(f'~~~~~~Running send_reminder_message()~~~~~~')
-    reminders = [f'10 pages a day!', 'Have you read today?', '¿Ya leiste hoy?', '¿Cuantas paginas has leido hoy?']
+    reminders = [f'10 pages a day!', 'Have you read today?', '¿Ya leiste hoy?', '¿Cuantas paginas has leido hoy?', 'If you read 20 minutes a day, you would have read 1.8 million words in a year.']
 
     # Create a timezone object for UTC
     utc_timezone = pytz.timezone('UTC')
