@@ -8,217 +8,190 @@ import pytz
 import calendar
 import requests
 import openai
+from typing import List, Optional
 
-DEFAULT_CHANNEL = 1327357851827572872
-# Get the TOKEN from the environment variable
-TOKEN = os.getenv("TOKEN")
-KEY_WEATHER = os.getenv("KEY_WEATHER")
-KEY_OPENAI = os.getenv("KEY_OPEN_AI")
+class BookClubBot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.all()
+        super().__init__(command_prefix='!', intents=intents)
+        
+        # Configuration
+        self.DEFAULT_CHANNEL = 1327357851827572872
+        self.TOKEN = os.getenv("TOKEN")
+        self.KEY_WEATHER = os.getenv("KEY_WEATHER")
+        self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
+        
+        # Session details (TODO: Move to database)
+        self.session = {
+            "number": 0,
+            "due_date": "End of MARCH!",
+            "book": {
+                "title": "Farenheit 451",
+                "author": "Ray Bradbury"
+            }
+        }
+        
+        # Color schemes for different embed types
+        self.colors = {
+            "success": discord.Color.green(),
+            "info": discord.Color.blue(),
+            "warning": discord.Color.yellow(),
+            "error": discord.Color.red(),
+            "fun": discord.Color.purple()
+        }
+        
+        # Message templates
+        self.greetings = ['I am Quill', '👀', 'Let\'s get reading!']
+        self.reactions = ['⚡️', '👽', '🍄', '🌙', '🔥', '👾', '🦉', '🐺', '🍁']
+        
+        # Validate configuration
+        if not self.TOKEN:
+            raise ValueError("TOKEN environment variable is not set.")
+            
+        # Register commands
+        self.setup_commands()
+        
+    def setup_commands(self):
+        @self.command()
+        async def usage(ctx: commands.Context):
+            embed = discord.Embed(
+                title="📚 Book Club Bot Commands",
+                description="Here's everything I can help you with!",
+                color=self.colors["info"]
+            )
+            
+            embed.add_field(
+                name="📖 Reading Commands",
+                value="• `!currentBook` - Show current book\n"
+                      "• `!dueDate` - Show due date\n"
+                      "• `!currentSession` - Show all session details",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="🎲 Fun Commands",
+                value="• `!rolldice` - Roll a six-sided die\n"
+                      "• `!flipcoin` - Flip a coin\n"
+                      "• `!choose <options>` - Choose from given options",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="🌤 Utility Commands",
+                value="• `!weather` - Get SF weather\n"
+                      "• `!funfact` - Get a random book-related fact",
+                inline=False
+            )
+            
+            embed.set_footer(text="All commands start with !")
+            await ctx.send(embed=embed)
 
-# Session details TODO: Move into database
-SESSION_NO = 0
-DUE_DATE = "End of MARCH!"
-BOOK_TITLE = "Farenheit 451"
-BOOK_AUTHOR = "Ray Bradbury"
+        @self.command()
+        async def currentBook(ctx: commands.Context):
+            embed = discord.Embed(
+                title="📚 Current Book",
+                description=f"**{self.session['book']['title']}**",
+                color=self.colors["info"]
+            )
+            embed.add_field(name="Author", value=self.session['book']['author'])
+            embed.set_footer(text="Happy reading! 📖")
+            await ctx.send(embed=embed)
 
+        @self.command()
+        async def currentSession(ctx: commands.Context):
+            embed = discord.Embed(
+                title="📚 Current Session Details",
+                color=self.colors["info"]
+            )
+            
+            embed.add_field(
+                name="Session Number",
+                value=f"#{self.session['number']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Book",
+                value=f"{self.session['book']['title']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Author",
+                value=f"{self.session['book']['author']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Due Date",
+                value=f"{self.session['due_date']}",
+                inline=False
+            )
+            
+            embed.set_footer(text="Keep reading! 📖")
+            await ctx.send(embed=embed)
 
-if not TOKEN:
-    raise ValueError("TOKEN environment variable is not set.")
-print(f'~~~~~~Got Discord TOKEN={TOKEN}~~~~~~')
+        @self.command()
+        async def weather(ctx: commands.Context):
+            weather_info = await self.get_weather()
+            
+            embed = discord.Embed(
+                title="🌤 San Francisco Weather",
+                description=weather_info,
+                color=self.colors["info"]
+            )
+            
+            # Add timestamp to show when the weather was checked
+            embed.timestamp = datetime.utcnow()
+            embed.set_footer(text="Weather information last updated")
+            
+            await ctx.send(embed=embed)
 
-intents = discord.Intents.all()
-client = commands.Bot(command_prefix='!', intents=intents)
+        @self.command()
+        async def funfact(ctx: commands.Context):
+            facts = [
+                'Abibliophobia is the fear of running out of reading material.',
+                'The Harvard University library has four law books bound in human skin.',
+                'The Adventures of Tom Sawyer is the first book written with a typewriter.',
+                'The name Wendy was made up for the book Peter Pan.',
+                'People in Iceland read more books per capita than any other country.',
+                'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.',
+                'Up to 50 books can be made from 1 tree.',
+                'Bibliosmia is the word for loving the smell of old books.'
+            ]
+            
+            embed = discord.Embed(
+                title="📚 Book Fun Fact",
+                description=random.choice(facts),
+                color=self.colors["fun"]
+            )
+            embed.set_footer(text="Did you know? 🤓")
+            await ctx.send(embed=embed)
 
-@client.event
-async def on_ready():
-    print(f'~~~~~~We have logged in as {client.user}~~~~~~')
-    if not send_reminder_message.is_running():
-      print(f'~~~~~~Starting send_reminder_message() tasks~~~~~~')
-      send_reminder_message.start()
+        @self.command()
+        async def rolldice(ctx: commands.Context):
+            result = random.randint(1, 6)
+            embed = discord.Embed(
+                title="🎲 Dice Roll",
+                description=f"You rolled a **{result}**!",
+                color=self.colors["fun"]
+            )
+            await ctx.send(embed=embed)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return # Avoid the bot responding to itself
-    
-    author = message.author.mention
-    msgFormat = message.content.lower()
-    allowed_mentions = discord.AllowedMentions(everyone = True)
+        @self.command()
+        async def flipcoin(ctx: commands.Context):
+            result = random.choice(["HEADS", "TAILS"])
+            embed = discord.Embed(
+                title="🪙 Coin Flip",
+                description=f"You got **{result}**!",
+                color=self.colors["fun"]
+            )
+            await ctx.send(embed=embed)
 
-    print(f'Got a new message=\'{message.content}\'\n\tguild={message.guild}\n\tauthor={message.author.name}')
+# Create and run bot
+def main():
+    bot = BookClubBot()
+    bot.run(bot.TOKEN)
 
-    greetings = [f'I am Quill', '👀', f'Let\'s get reading!']
-    greetReactions = [f'⚡️', f'👽', f'🍄', f'🌙', f'🔥', f'👾', f'🦉', f'🐺', f'🍁']
-
-    # The message to be sent out to the message.channel
-    messageToSend = ""
-
-    # React to a mention of this bot
-    if client.user in message.mentions:
-      go = random.randint(1, 10)
-      if go < 4:
-        messageToSend = random.choice(greetings)
-      elif go > 5:
-        reaction = random.choice(greetReactions)
-        print(f"Adding reaction to message: {reaction}")
-        await message.add_reaction(reaction)
-
-    ### Philosophy is done best in community
-    if 'together' in message.content:
-      messageToSend = f'Reading is done best in community.'
-
-    # Command redirects
-    if 'weather' in msgFormat:
-      messageToSend = get_weather()
-
-    if 'question:' in msgFormat:
-      prompt = msgFormat.split(':')[1]
-      messageToSend = get_openai_response(prompt)
-
-    # Only send messageToSend if the string is not empty
-    if messageToSend:
-      print(f"Sending message: {messageToSend}")
-      await message.channel.send(messageToSend)
-
-    # Add random reaction to any message
-    if random.randint(1, 10) < 4:
-      randomReaction = random.choice(greetReactions)
-      print(f"Adding random reaction to message: {randomReaction}")
-      await message.add_reaction(randomReaction)
-
-    # This line is necessary to process commands within on_message()
-    await client.process_commands(message) 
-    
-@client.event
-async def on_member_join(member):
-    print(f"{member} joined")
-    channel = client.get_channel(DEFAULT_CHANNEL)
-    greeting = ["Welcome", "Bienvenido", "Willkommen", "Bienvenue", "Bem-vindo", "Welkom", "Καλως"]
-    if not channel:
-        return
-    await channel.send(f"{greeting}, {member}!")
-
-def get_weather():
-    url = f"https://api.weatherbit.io/v2.0/current?city=San%20Francisco&state&country=US&key={KEY_WEATHER}"
-    response = requests.get(url)
-    data = response.json()
-    temperature_celsius = data['data'][0]['temp']
-    temperature_fahrenheit = (temperature_celsius * 9/5) + 32
-    city = data['data'][0]['city_name']
-    description = data['data'][0]['weather']['description']
-    is_raining = "rain" in description.lower()
-    message = f"Current weather in {city}: {temperature_fahrenheit:.1f}°F ({description})"
-    if is_raining:
-      message += "; and it is raining!"
-    return message
-
-
-############################# LOOPING MESSAGES #############################
-# Define the async task running every hour that will send reminder messages
-@tasks.loop(hours=1)
-async def send_reminder_message():
-    print(f'~~~~~~Running send_reminder_message()~~~~~~')
-    reminders = [f'10 pages a day!', 'Have you read today?', 'How many pages have you read today?', 'If you read 20 minutes a day, you would have read 1.8 million words in a year.']
-
-    # Create a timezone object for UTC
-    utc_timezone = pytz.timezone('UTC')
-    # Define the SF timezone (Pacific Standard Time)
-    sf_timezone = pytz.timezone('US/Pacific')
-    now_utc = datetime.utcnow()
-    # Convert UTC time to LA time
-    now_pacific = now_utc.replace(tzinfo=pytz.utc).astimezone(sf_timezone)
-
-    # Get a random number, and only send message if it falls on it
-    if now_pacific.hour == 17:
-      await channel.send(random.choice(reminders))
-    else:
-      print(f"Ran send_reminder_message() at {now_pacific}, but there's nothing to shout.")
-
-
-############################# CUSTOM COMMANDS #############################
-@client.command()
-async def usage(ctx: commands.Context):
-    print(f"Got a usage command")
-    await ctx.send(f"**Current list of commands:**\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\n\n*NOTE: all commands must start with a '!' prefix*")
-
-async def rules(ctx: commands.Context):
-    print(f"Got a rules command")
-
-    await ctx.send(f"**Rules for Session {SESSION_NO}**:\n" + 
-    f"")
-
-@client.command()
-async def rolldice(ctx: commands.Context):
-    print(f"Got a rolldice command")
-    result = random.randint(1, 6)
-    await ctx.send(f"You rolled a: **{result}**!")
-
-@client.command()
-async def flipcoin(ctx: commands.Context):
-    print(f"Got a flipcoin command")
-    result = random.choice(["HEADS", "TAILS"])
-    await ctx.send(f"You flipped a coin and got: **{result}**!")
-
-@client.command()
-async def choose(ctx: commands.Context, *, argments):
-    print(f"Got a choose command")
-    options = argments.split(" ")
-    result = random.choice(options)
-    print(f"Selected result: {result}")
-    rand = random.randint(1, 3)
-    if rand == 1:
-      await ctx.send(f"**{result}**, I choose you!")
-    elif rand == 2:
-      await ctx.send(f"I have selected **{result}**.")
-    elif rand == 3:
-      await ctx.send(f"**{result}**. I have spoken.")
-    else:
-      await ctx.send(f"The winner is: **{result}**!")
-
-@client.command()
-async def weather(ctx: commands.Context):
-    print(f"Got a weather command")
-    weather = get_weather()
-    print(f"~~~{weather}~~~")
-    await ctx.send(weather)
-
-@client.command()
-async def currentBook(ctx: commands.Context):
-    print(f"Got a currentBook command")
-    await ctx.send(f"Current book: **{BOOK_TITLE} by {BOOK_AUTHOR}**")
-
-@client.command()
-async def dueDate(ctx: commands.Context):
-    print(f"Got a dueDate command")
-    await ctx.send(f"Session due date: **{DUE_DATE}**")
-
-@client.command()
-async def currentSession(ctx: commands.Context):
-    print(f"Got a currentSession command")
-    await ctx.send(f"Current session details: \n\tSession number: **{SESSION_NO}** \n\tSession due date: **{DUE_DATE}** \n\tCurrent book: **{BOOK_TITLE} by {BOOK_AUTHOR}**")
-
-@client.command()
-async def funfact(ctx: commands.Context):
-    print(f"Got a funfact command")
-    facts = [f'Abibliophobia is the fear of running out of reading material.', 'The Harvard University library has four law books bound in human skin.', 'The Adventures of Tom Sawyer is the first book written with a typewriter.', 'The name Wendy was made up for the book Peter Pan. There was never a recorded Wendy before.',
-    'People in Iceland read more books per capita than any other country in the world.', '33% of high school graduates in the U.S. never read another book for the rest of their lives.', 'The Harry Potter books are the most banned books in America.',
-    'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.', 'Avid reading throughout a lifetime may reduce the rate of memory decline by as much as 32%.', 'Up to 50 books can be made from 1 tree.', 'The most sold book is the Bible.',
-    'A study found that you are 2 ½ times less likely to be diagnosed with Alzheimer\’s in later life if you read regularly.', 'Bibliosmia is the word for loving the smell of old books.', 'There are around 130 million published books.']
-    result = random.choice(facts)
-    await ctx.send(f"**Fun Fact**:\n{result}")
-
-
-################################# OPENAI ##################################
-def get_openai_response(prompt):
-    openai.api_key = KEY_OPENAI
-    response = openai.Completion.create(
-      engine="gpt-3.5-turbo-0125",
-      prompt=prompt,
-      max_tokens=150  # Limits the length of the generated response
-    )
-    return response.choices[0].text
-
-
-
-################################ EXEC INIT ################################
-client.run(TOKEN) # Run the bot with your bot token
+if __name__ == "__main__":
+    main()
