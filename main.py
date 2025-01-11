@@ -184,7 +184,7 @@ class BookClubBot(commands.Bot):
             embed.add_field(
                 name="📖 Reading Commands",
                 value="• `!book` - Show current book\n"
-                      "• `!dueDate` - Show due date\n"
+                      "• `!duedate` - Show due date\n"
                       "• `!session` - Show all session details\n"
                       "• `!discussions` - Show the discussion details",
                 inline=False
@@ -200,7 +200,7 @@ class BookClubBot(commands.Bot):
             
             embed.add_field(
                 name="🌤 Utility Commands",
-                value="• `!weather` - Get SF weather\n"
+                value="• `!weather <city>` - Get the city weather\n"
                       "• `!funfact` - Get a random book-related fact",
                 inline=False
             )
@@ -238,7 +238,7 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def dueDate(ctx: commands.Context):
+        async def duedate(ctx: commands.Context):
             embed = discord.Embed(
                 title="📅 Due Date",
                 description=f"Session due date: **{self.session['due_date']}**",
