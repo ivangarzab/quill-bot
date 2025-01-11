@@ -187,7 +187,8 @@ async def funfact(ctx: commands.Context):
     print(f"Got a funfact command")
     facts = [f'Abibliophobia is the fear of running out of reading material.', 'The Harvard University library has four law books bound in human skin.', 'The Adventures of Tom Sawyer is the first book written with a typewriter.', 'The name Wendy was made up for the book Peter Pan. There was never a recorded Wendy before.',
     'People in Iceland read more books per capita than any other country in the world.', '33% of high school graduates in the U.S. never read another book for the rest of their lives.', 'The Harry Potter books are the most banned books in America.',
-    'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.', 'Avid reading throughout a lifetime may reduce the rate of memory decline by as much as 32%.']
+    'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.', 'Avid reading throughout a lifetime may reduce the rate of memory decline by as much as 32%.', 'Up to 50 books can be made from 1 tree.', 'The most sold book is the Bible.',
+    'A study found that you are 2 ½ times less likely to be diagnosed with Alzheimer\’s in later life if you read regularly.', 'Bibliosmia is the word for loving the smell of old books.', 'There are around 130 million published books.']
     result = random.choice(facts)
     await ctx.send(f"Fun Fact: {result}")
 
