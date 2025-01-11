@@ -182,6 +182,14 @@ async def currentSession(ctx: commands.Context):
     print(f"Got a currentSession command")
     await ctx.send(f"Current session details: \n\tCurrent book: {CURRENT_BOOK} \n\tSession due date: {DUE_DATE}")
 
+@client.command()
+async def funfact(ctx: commands.Context):
+    print(f"Got a funfact command")
+    facts = [f'Abibliophobia is the fear of running out of reading material.', 'The Harvard University library has four law books bound in human skin.', 'The Adventures of Tom Sawyer is the first book written with a typewriter.', 'The name Wendy was made up for the book Peter Pan. There was never a recorded Wendy before.',
+    'People in Iceland read more books per capita than any other country in the world.', '33% of high school graduates in the U.S. never read another book for the rest of their lives.', 'The Harry Potter books are the most banned books in America.',
+    'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.', 'Avid reading throughout a lifetime may reduce the rate of memory decline by as much as 32%.']
+    await ctx.send(random.choice(facts))
+
 
 ################################# OPENAI ##################################
 def get_openai_response(prompt):
