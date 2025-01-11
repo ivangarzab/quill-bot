@@ -181,7 +181,8 @@ class BookClubBot(commands.Bot):
                 name="📖 Reading Commands",
                 value="• `!book` - Show current book\n"
                       "• `!dueDate` - Show due date\n"
-                      "• `!sessionDetails` - Show all session details",
+                      "• `!sessionDetails` - Show all session details\n"
+                      "• `!discussions` - Show the discussion details",
                 inline=False
             )
             
