@@ -209,24 +209,6 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def choose(ctx: commands.Context, *, arguments):
-            options = arguments.split()
-            result = random.choice(options)
-            responses = [
-                f"**{result}**, I choose you!",
-                f"I have selected **{result}**.",
-                f"**{result}**. I have spoken.",
-                f"The winner is: **{result}**!"
-            ]
-            
-            embed = discord.Embed(
-                title="🎯 Choice Made",
-                description=random.choice(responses),
-                color=self.colors["fun"]
-            )
-            await ctx.send(embed=embed)
-
-        @self.command()
         async def book(ctx: commands.Context):
             embed = discord.Embed(
                 title="📚 Current Book",
@@ -350,6 +332,24 @@ class BookClubBot(commands.Bot):
                 color=self.colors["purp"]
             )
             embed.set_footer(text=random.choice(closers))
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def choose(ctx: commands.Context, *, arguments):
+            options = arguments.split()
+            result = random.choice(options)
+            responses = [
+                f"**{result}**, I choose you!",
+                f"I have selected **{result}**.",
+                f"**{result}**. I have spoken.",
+                f"The winner is: **{result}**!"
+            ]
+            
+            embed = discord.Embed(
+                title="🎯 Choice Made",
+                description=random.choice(responses),
+                color=self.colors["fun"]
+            )
             await ctx.send(embed=embed)
 
         @self.command()
