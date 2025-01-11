@@ -337,7 +337,11 @@ class BookClubBot(commands.Bot):
             ]
             closers = [
               'Did you know? 🤓',
-              'Riddle me this ⁉️'
+              'Riddle me this ❔❓',
+              'Knowledge is power! 💡',
+              'Now you know! ‼️',
+              'Food for thought! 🍎',
+              'Curiosity never killed the bookworm! 🐛'
             ]
             
             embed = discord.Embed(
