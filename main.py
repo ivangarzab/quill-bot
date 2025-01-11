@@ -31,6 +31,15 @@ class BookClubBot(commands.Bot):
             }
         }
         
+        # Color schemes for different embed types
+        self.colors = {
+            "success": discord.Color.green(),
+            "info": discord.Color.blue(),
+            "warning": discord.Color.yellow(),
+            "error": discord.Color.red(),
+            "fun": discord.Color.purple()
+        }
+        
         # Message templates
         self.greetings = ['I am Quill', '👀', 'Let\'s get reading!']
         self.reactions = ['⚡️', '👽', '🍄', '🌙', '🔥', '👾', '🦉', '🐺', '🍁']
@@ -42,111 +51,172 @@ class BookClubBot(commands.Bot):
         # Register commands
         self.setup_commands()
         
-    async def setup_hook(self):
-        self.send_reminder_message.start()
-        
     def setup_commands(self):
         @self.command()
         async def usage(ctx: commands.Context):
-            commands_list = [
-                "rolldice - Roll a six-sided die",
-                "flipcoin - Flip a coin",
-                "choose <options> - Choose from given options",
-                "weather - Get SF weather",
-                "currentBook - Show current book",
-                "dueDate - Show due date",
-                "currentSession - Show all session details"
-            ]
-            await ctx.send("**Current list of commands:**\n" + "\n".join(f"- {cmd}" for cmd in commands_list))
-            
-    async def get_weather(self) -> str:
-        """Fetch current weather for San Francisco."""
-        url = f"https://api.weatherbit.io/v2.0/current?city=San%20Francisco&state&country=US&key={self.KEY_WEATHER}"
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            data = response.json()
-            
-            temp_c = data['data'][0]['temp']
-            temp_f = (temp_c * 9/5) + 32
-            city = data['data'][0]['city_name']
-            description = data['data'][0]['weather']['description']
-            
-            message = f"Current weather in {city}: {temp_f:.1f}°F ({description})"
-            if "rain" in description.lower():
-                message += "; and it is raining!"
-            return message
-        except Exception as e:
-            return f"Error fetching weather: {str(e)}"
-            
-    async def get_openai_response(self, prompt: str) -> str:
-        """Get response from OpenAI API."""
-        try:
-            openai.api_key = self.KEY_OPENAI
-            response = openai.Completion.create(
-                engine="gpt-3.5-turbo-0125",
-                prompt=prompt,
-                max_tokens=150
+            embed = discord.Embed(
+                title="📚 Book Club Bot Commands",
+                description="Here's everything I can help you with!",
+                color=self.colors["info"]
             )
-            return response.choices[0].text
-        except Exception as e:
-            return f"Error generating response: {str(e)}"
             
-    @tasks.loop(hours=1)
-    async def send_reminder_message(self):
-        """Send daily reading reminders."""
-        reminders = [
-            '10 pages a day!',
-            'Have you read today?',
-            'How many pages have you read today?',
-            'If you read 20 minutes a day, you would have read 1.8 million words in a year.'
-        ]
-        
-        sf_timezone = pytz.timezone('US/Pacific')
-        now_pacific = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(sf_timezone)
-        
-        if now_pacific.hour == 17:
-            channel = self.get_channel(self.DEFAULT_CHANNEL)
-            if channel:
-                await channel.send(random.choice(reminders))
-                
-    async def on_message(self, message: discord.Message):
-        """Handle incoming messages."""
-        if message.author == self.user:
-            return
+            embed.add_field(
+                name="📖 Reading Commands",
+                value="• `!currentBook` - Show current book\n"
+                      "• `!dueDate` - Show due date\n"
+                      "• `!currentSession` - Show all session details",
+                inline=False
+            )
             
-        msg_content = message.content.lower()
-        
-        # Handle mentions
-        if self.user in message.mentions:
-            if random.random() < 0.4:
-                await message.channel.send(random.choice(self.greetings))
-            elif random.random() > 0.5:
-                await message.add_reaction(random.choice(self.reactions))
-                
-        # Handle keywords
-        if 'together' in msg_content:
-            await message.channel.send('Reading is done best in community.')
-        elif 'weather' in msg_content:
-            weather = await self.get_weather()
-            await message.channel.send(weather)
-        elif 'question:' in msg_content:
-            prompt = msg_content.split(':', 1)[1]
-            response = await self.get_openai_response(prompt)
-            await message.channel.send(response)
+            embed.add_field(
+                name="🎲 Fun Commands",
+                value="• `!rolldice` - Roll a six-sided die\n"
+                      "• `!flipcoin` - Flip a coin\n"
+                      "• `!choose <options>` - Choose from given options (separated by a space)",
+                inline=False
+            )
             
-        # Random reactions
-        if random.random() < 0.4:
-            await message.add_reaction(random.choice(self.reactions))
+            embed.add_field(
+                name="🌤 Utility Commands",
+                value="• `!weather` - Get SF weather\n"
+                      "• `!funfact` - Get a random book-related fact",
+                inline=False
+            )
             
-        await self.process_commands(message)
+            embed.set_footer(text="All commands start with !")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def currentBook(ctx: commands.Context):
+            embed = discord.Embed(
+                title="📚 Current Book",
+                description=f"**{self.session['book']['title']}**",
+                color=self.colors["info"]
+            )
+            embed.add_field(name="Author", value=self.session['book']['author'])
+            embed.set_footer(text="Happy reading! 📖")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def dueDate(ctx: commands.Context):
+            embed = discord.Embed(
+                title="🗓️ Due Date",
+                description=f"**{self.session['due_date']}**",
+                color=self.colors["info"]
+            )
+            embed.set_footer(text="Let's get on it! 💪")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def currentSession(ctx: commands.Context):
+            embed = discord.Embed(
+                title="📚 Current Session Details",
+                color=self.colors["info"]
+            )
             
-    async def on_member_join(self, member: discord.Member):
-        """Welcome new members."""
-        channel = self.get_channel(self.DEFAULT_CHANNEL)
-        if channel:
-            greetings = ["Welcome", "Bienvenido", "Willkommen", "Bienvenue", "Bem-vindo", "Welkom", "Καλως"]
-            await channel.send(f"{random.choice(greetings)}, {member.mention}!")
+            embed.add_field(
+                name="Session Number",
+                value=f"#{self.session['number']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Book",
+                value=f"{self.session['book']['title']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Author",
+                value=f"{self.session['book']['author']}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Due Date",
+                value=f"{self.session['due_date']}",
+                inline=False
+            )
+            
+            embed.set_footer(text="Keep reading! 📖")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def weather(ctx: commands.Context):
+            weather_info = await self.get_weather()
+            
+            embed = discord.Embed(
+                title="🌤 San Francisco Weather",
+                description=weather_info,
+                color=self.colors["info"]
+            )
+            
+            # Add timestamp to show when the weather was checked
+            embed.timestamp = datetime.utcnow()
+            embed.set_footer(text="Weather information last updated")
+            
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def funfact(ctx: commands.Context):
+            facts = [
+                'Abibliophobia is the fear of running out of reading material.',
+                'The Harvard University library has four law books bound in human skin.',
+                'The Adventures of Tom Sawyer is the first book written with a typewriter.',
+                'The name Wendy was made up for the book Peter Pan.',
+                'People in Iceland read more books per capita than any other country.',
+                'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.',
+                'Up to 50 books can be made from 1 tree.',
+                'Bibliosmia is the word for loving the smell of old books.'
+            ]
+            
+            embed = discord.Embed(
+                title="📚 Book Fun Fact",
+                description=random.choice(facts),
+                color=self.colors["fun"]
+            )
+            embed.set_footer(text="Did you know? 🤓")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def choose(ctx: commands.Context, *, argments):
+            options = argments.split(" ")
+            result = random.choice(options)
+            responses = [
+                f"**{result}**, I choose you!",
+                f"I have selected **{result}**.",
+                f"**{result}**. I have spoken.",
+                f"The winner is: **{result}**!"
+            ]
+            rand = random.randint(1, 3)
+            
+            embed = discord.Embed(
+                title="⭐️ The Chosen One",
+                description=random.choice(responses),
+                color=self.colors["fun"]
+            )
+            embed.set_footer(text="Winner, winner, chicken dinner! 🐣")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def rolldice(ctx: commands.Context):
+            result = random.randint(1, 6)
+            embed = discord.Embed(
+                title="🎲 Dice Roll",
+                description=f"You rolled a **{result}**!",
+                color=self.colors["fun"]
+            )
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def flipcoin(ctx: commands.Context):
+            result = random.choice(["HEADS", "TAILS"])
+            embed = discord.Embed(
+                title="🪙 Coin Flip",
+                description=f"You got **{result}**!",
+                color=self.colors["fun"]
+            )
+            await ctx.send(embed=embed)
 
 # Create and run bot
 def main():
