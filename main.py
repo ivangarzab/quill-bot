@@ -113,7 +113,7 @@ class BookClubBot(commands.Bot):
         ]
         
         sf_timezone = pytz.timezone('US/Pacific')
-        now_pacific = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(sf_timezone)
+        now_pacific = datetime.now(tz=sf_timezone)
         
         if now_pacific.hour == 17:
             channel = self.get_channel(self.DEFAULT_CHANNEL)
