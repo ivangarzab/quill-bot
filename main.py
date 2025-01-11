@@ -130,19 +130,19 @@ async def send_reminder_message():
 @client.command()
 async def usage(ctx: commands.Context):
     print(f"Got a usage command")
-    await ctx.send(f"Current list of commands:\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\nall commands must start with a '!' prefix")
+    await ctx.send(f"**Current list of commands:**\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\n*NOTE: all commands must start with a '!' prefix*")
 
 @client.command()
 async def rolldice(ctx: commands.Context):
     print(f"Got a rolldice command")
     result = random.randint(1, 6)
-    await ctx.send(f"You rolled a {result}!")
+    await ctx.send(f"You rolled a **{result}**!")
 
 @client.command()
 async def flipcoin(ctx: commands.Context):
     print(f"Got a flipcoin command")
     result = random.choice(["HEADS", "TAILS"])
-    await ctx.send(f"You flipped a coin and got {result}!")
+    await ctx.send(f"You flipped a coin and got **{result}**!")
 
 @client.command()
 async def choose(ctx: commands.Context, *, argments):
@@ -152,13 +152,13 @@ async def choose(ctx: commands.Context, *, argments):
     print(f"Selected result: {result}")
     rand = random.randint(1, 3)
     if rand == 1:
-      await ctx.send(f"{result}, I choose you!")
+      await ctx.send(f"**{result}**, I choose you!")
     elif rand == 2:
-      await ctx.send(f"I have selected {result}.")
+      await ctx.send(f"I have selected **{result}**.")
     elif rand == 3:
-      await ctx.send(f"{result}. I have spoken.")
+      await ctx.send(f"**{result}**. I have spoken.")
     else:
-      await ctx.send(f"The winner is, {result}!")
+      await ctx.send(f"The winner is, **{result}**!")
 
 @client.command()
 async def weather(ctx: commands.Context):
@@ -175,12 +175,12 @@ async def currentBook(ctx: commands.Context):
 @client.command()
 async def dueDate(ctx: commands.Context):
     print(f"Got a dueDate command")
-    await ctx.send(f"Session due date: {DUE_DATE}")
+    await ctx.send(f"Session due date: **{DUE_DATE}**")
 
 @client.command()
 async def currentSession(ctx: commands.Context):
     print(f"Got a currentSession command")
-    await ctx.send(f"Current session details: \n\tCurrent book: {CURRENT_BOOK} \n\tSession due date: {DUE_DATE}")
+    await ctx.send(f"Current session details: \n\tCurrent book: **{CURRENT_BOOK}** \n\tSession due date: **{DUE_DATE}**")
 
 @client.command()
 async def funfact(ctx: commands.Context):
@@ -188,7 +188,8 @@ async def funfact(ctx: commands.Context):
     facts = [f'Abibliophobia is the fear of running out of reading material.', 'The Harvard University library has four law books bound in human skin.', 'The Adventures of Tom Sawyer is the first book written with a typewriter.', 'The name Wendy was made up for the book Peter Pan. There was never a recorded Wendy before.',
     'People in Iceland read more books per capita than any other country in the world.', '33% of high school graduates in the U.S. never read another book for the rest of their lives.', 'The Harry Potter books are the most banned books in America.',
     'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.', 'Avid reading throughout a lifetime may reduce the rate of memory decline by as much as 32%.']
-    await ctx.send(random.choice(facts))
+    result = random.choice(facts)
+    await ctx.send(f"Fun Fact: {result}")
 
 
 ################################# OPENAI ##################################
