@@ -145,7 +145,7 @@ class BookClubBot(commands.Bot):
             await message.channel.send(embed=embed)
             
         # Random reactions
-        if random.random() < 0.4:
+        if not message.content.startswith('!') and random.random() < 0.4:
             await message.add_reaction(random.choice(self.reactions))
             
         await self.process_commands(message)
