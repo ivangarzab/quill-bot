@@ -50,7 +50,120 @@ class BookClubBot(commands.Bot):
             
         # Register commands
         self.setup_commands()
+
+    async def setup_hook(self):
+        self.send_reminder_message.start()
         
+    async def get_weather(self) -> str:
+        """Fetch current weather for San Francisco."""
+        url = f"https://api.weatherbit.io/v2.0/current?city=San%20Francisco&state&country=US&key={self.KEY_WEATHER}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            
+            temp_c = data['data'][0]['temp']
+            temp_f = (temp_c * 9/5) + 32
+            city = data['data'][0]['city_name']
+            description = data['data'][0]['weather']['description']
+            
+            message = f"Current weather in {city}: {temp_f:.1f}°F ({description})"
+            if "rain" in description.lower():
+                message += "; and it is raining!"
+            return message
+        except Exception as e:
+            return f"Error fetching weather: {str(e)}"
+            
+    async def get_openai_response(self, prompt: str) -> str:
+        """Get response from OpenAI API."""
+        try:
+            openai.api_key = self.KEY_OPENAI
+            response = openai.Completion.create(
+                engine="gpt-3.5-turbo-0125",
+                prompt=prompt,
+                max_tokens=150
+            )
+            return response.choices[0].text
+        except Exception as e:
+            return f"Error generating response: {str(e)}"
+
+    @tasks.loop(hours=1)
+    async def send_reminder_message(self):
+        """Send daily reading reminders."""
+        reminders = [
+            '10 pages a day!',
+            'Have you read today?',
+            'How many pages have you read today?',
+            'If you read 20 minutes a day, you would have read 1.8 million words in a year.'
+        ]
+        
+        sf_timezone = pytz.timezone('US/Pacific')
+        now_pacific = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(sf_timezone)
+        
+        if now_pacific.hour == 17:
+            channel = self.get_channel(self.DEFAULT_CHANNEL)
+            if channel:
+                embed = discord.Embed(
+                    title="📚 Daily Reading Reminder",
+                    description=random.choice(reminders),
+                    color=self.colors["info"]
+                )
+                await channel.send(embed=embed)
+
+    async def on_message(self, message: discord.Message):
+        """Handle incoming messages."""
+        if message.author == self.user:
+            return
+            
+        msg_content = message.content.lower()
+        
+        # Handle mentions
+        if self.user in message.mentions:
+            if random.random() < 0.4:
+                await message.channel.send(random.choice(self.greetings))
+            elif random.random() > 0.5:
+                await message.add_reaction(random.choice(self.reactions))
+                
+        # Handle keywords
+        if 'together' in msg_content:
+            await message.channel.send('Reading is done best in community.')
+        elif 'weather' in msg_content:
+            weather = await self.get_weather()
+            embed = discord.Embed(
+                title="🌤 Weather Update",
+                description=weather,
+                color=self.colors["info"]
+            )
+            await message.channel.send(embed=embed)
+        elif 'question:' in msg_content:
+            prompt = msg_content.split(':', 1)[1]
+            response = await self.get_openai_response(prompt)
+            embed = discord.Embed(
+                title="🤔 Question Response",
+                description=response,
+                color=self.colors["info"]
+            )
+            await message.channel.send(embed=embed)
+            
+        # Random reactions
+        if random.random() < 0.4:
+            await message.add_reaction(random.choice(self.reactions))
+            
+        await self.process_commands(message)
+
+    async def on_member_join(self, member: discord.Member):
+        """Welcome new members."""
+        channel = self.get_channel(self.DEFAULT_CHANNEL)
+        if channel:
+            greetings = ["Welcome", "Bienvenido", "Willkommen", "Bienvenue", "Bem-vindo", "Welkom", "Καλως"]
+            embed = discord.Embed(
+                title="👋 New Member!",
+                description=f"{random.choice(greetings)}, {member.mention}!",
+                color=self.colors["success"]
+            )
+            embed.set_footer(text="Welcome to the Book Club!")
+            await channel.send(embed=embed)
+            
     def setup_commands(self):
         @self.command()
         async def usage(ctx: commands.Context):
@@ -72,7 +185,7 @@ class BookClubBot(commands.Bot):
                 name="🎲 Fun Commands",
                 value="• `!rolldice` - Roll a six-sided die\n"
                       "• `!flipcoin` - Flip a coin\n"
-                      "• `!choose <options>` - Choose from given options (separated by a space)",
+                      "• `!choose <options>` - Choose from given options",
                 inline=False
             )
             
@@ -84,6 +197,24 @@ class BookClubBot(commands.Bot):
             )
             
             embed.set_footer(text="All commands start with !")
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def choose(ctx: commands.Context, *, arguments):
+            options = arguments.split()
+            result = random.choice(options)
+            responses = [
+                f"**{result}**, I choose you!",
+                f"I have selected **{result}**.",
+                f"**{result}**. I have spoken.",
+                f"The winner is: **{result}**!"
+            ]
+            
+            embed = discord.Embed(
+                title="🎯 Choice Made",
+                description=random.choice(responses),
+                color=self.colors["fun"]
+            )
             await ctx.send(embed=embed)
 
         @self.command()
@@ -100,11 +231,10 @@ class BookClubBot(commands.Bot):
         @self.command()
         async def dueDate(ctx: commands.Context):
             embed = discord.Embed(
-                title="🗓️ Due Date",
-                description=f"**{self.session['due_date']}**",
-                color=self.colors["info"]
+                title="📅 Due Date",
+                description=f"Session due date: **{self.session['due_date']}**",
+                color=self.colors["warning"]
             )
-            embed.set_footer(text="Let's get on it! 💪")
             await ctx.send(embed=embed)
 
         @self.command()
@@ -151,7 +281,6 @@ class BookClubBot(commands.Bot):
                 color=self.colors["info"]
             )
             
-            # Add timestamp to show when the weather was checked
             embed.timestamp = datetime.utcnow()
             embed.set_footer(text="Weather information last updated")
             
@@ -179,26 +308,6 @@ class BookClubBot(commands.Bot):
             await ctx.send(embed=embed)
 
         @self.command()
-        async def choose(ctx: commands.Context, *, argments):
-            options = argments.split(" ")
-            result = random.choice(options)
-            responses = [
-                f"**{result}**, I choose you!",
-                f"I have selected **{result}**.",
-                f"**{result}**. I have spoken.",
-                f"The winner is: **{result}**!"
-            ]
-            rand = random.randint(1, 3)
-            
-            embed = discord.Embed(
-                title="⭐️ The Chosen One",
-                description=random.choice(responses),
-                color=self.colors["fun"]
-            )
-            embed.set_footer(text="Winner, winner, chicken dinner! 🐣")
-            await ctx.send(embed=embed)
-
-        @self.command()
         async def rolldice(ctx: commands.Context):
             result = random.randint(1, 6)
             embed = discord.Embed(
@@ -218,7 +327,6 @@ class BookClubBot(commands.Bot):
             )
             await ctx.send(embed=embed)
 
-# Create and run bot
 def main():
     bot = BookClubBot()
     bot.run(bot.TOKEN)
