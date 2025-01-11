@@ -1,6 +1,7 @@
 import os
 import random
 import discord
+from discord import Color
 from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime, timedelta
@@ -33,11 +34,15 @@ class BookClubBot(commands.Bot):
         
         # Color schemes for different embed types
         self.colors = {
-            "success": discord.Color.green(),
-            "info": discord.Color.blue(),
-            "warning": discord.Color.yellow(),
-            "error": discord.Color.red(),
-            "fun": discord.Color.purple()
+            "success": Color.green(),
+            "info": Color.blue(),
+            "warning": Color.yellow(),
+            "error": Color.red(),
+            "fun": Color.orange(),
+            "purp": Color.purple(),
+            "royal": Color.gold(),
+            "misc": Color.teal(),
+            "blank": Color.dark_grey()
         }
         
         # Message templates
@@ -91,10 +96,11 @@ class BookClubBot(commands.Bot):
     async def send_reminder_message(self):
         """Send daily reading reminders."""
         reminders = [
-            '10 pages a day!',
+            'Try to read a mininum of 10 pages per day!',
             'Have you read today?',
             'How many pages have you read today?',
-            'If you read 20 minutes a day, you would have read 1.8 million words in a year.'
+            'If you read 20 minutes a day, you would have read 1.8 million words in a year.',
+            'Have you read? I\'m watching 🦉'
         ]
         
         sf_timezone = pytz.timezone('US/Pacific')
@@ -106,7 +112,7 @@ class BookClubBot(commands.Bot):
                 embed = discord.Embed(
                     title="📚 Daily Reading Reminder",
                     description=random.choice(reminders),
-                    color=self.colors["info"]
+                    color=self.colors["purp"]
                 )
                 await channel.send(embed=embed)
 
@@ -127,21 +133,14 @@ class BookClubBot(commands.Bot):
         # Handle keywords
         if 'together' in msg_content:
             await message.channel.send('Reading is done best in community.')
-        elif 'weather' in msg_content:
-            weather = await self.get_weather()
-            embed = discord.Embed(
-                title="🌤 Weather Update",
-                description=weather,
-                color=self.colors["info"]
-            )
-            await message.channel.send(embed=embed)
+        # Half-command menat to reach ChatGTP
         elif 'question:' in msg_content:
             prompt = msg_content.split(':', 1)[1]
             response = await self.get_openai_response(prompt)
             embed = discord.Embed(
                 title="🤔 Question Response",
                 description=response,
-                color=self.colors["info"]
+                color=self.colors["blank"]
             )
             await message.channel.send(embed=embed)
             
@@ -302,7 +301,7 @@ class BookClubBot(commands.Bot):
             embed = discord.Embed(
                 title="📚 Book Fun Fact",
                 description=random.choice(facts),
-                color=self.colors["fun"]
+                color=self.colors["purp"]
             )
             embed.set_footer(text="Did you know? 🤓")
             await ctx.send(embed=embed)
