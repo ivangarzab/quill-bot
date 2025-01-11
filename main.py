@@ -16,6 +16,7 @@ KEY_WEATHER = os.getenv("KEY_WEATHER")
 KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 
 # Session details
+SESSION_NO = 1
 CURRENT_BOOK = "Farenheit 451"
 DUE_DATE = "End of MARCH!"
 
@@ -82,11 +83,12 @@ async def on_message(message):
     
 @client.event
 async def on_member_join(member):
-    println(f"{member} joined")
+    print(f"{member} joined")
     channel = client.get_channel(DEFAULT_CHANNEL)
+    greeting = ["Welcome", "Bienvenido", "Willkommen", "Bienvenue", "Bem-vindo", "Welkom", "Καλως"]
     if not channel:
         return
-    await channel.send(f"Welcome, {member}!")
+    await channel.send(f"{greeting}, {member}!")
 
 def get_weather():
     url = f"https://api.weatherbit.io/v2.0/current?city=San%20Francisco&state&country=US&key={KEY_WEATHER}"
@@ -131,6 +133,12 @@ async def send_reminder_message():
 async def usage(ctx: commands.Context):
     print(f"Got a usage command")
     await ctx.send(f"**Current list of commands:**\n- rolldice\n- flipcoin\n- choose <options>\n- weather (SF only)\n- currentBook\n- dueDate\n- currentSession\n\n*NOTE: all commands must start with a '!' prefix*")
+
+async def rules(ctx: commands.Context):
+    print(f"Got a rules command")
+
+    await ctx.send(f"**Rules for Session {SESSION_NO}**:\n" + 
+    f"")
 
 @client.command()
 async def rolldice(ctx: commands.Context):
