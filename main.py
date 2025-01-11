@@ -339,7 +339,7 @@ class BookClubBot(commands.Bot):
               'Did you know? 🤓',
               'Riddle me this ❔❓',
               'Knowledge is power! 💡',
-              'Now you know! ‼️',
+              'Now you know ‼️',
               'Food for thought! 🍎',
               'Curiosity never killed the bookworm! 🐛'
             ]
