@@ -10,12 +10,15 @@ import calendar
 import requests
 import openai
 from typing import List, Optional
+from dotenv import load_dotenv
 
 class BookClubBot(commands.Bot):
     def __init__(self):
         print("~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
         intents = discord.Intents.all()
         super().__init__(command_prefix='!', intents=intents)
+
+        load_dotenv(override=True)
         
         # Configuration
         self.DEFAULT_CHANNEL = 1327357851827572872
@@ -23,7 +26,8 @@ class BookClubBot(commands.Bot):
         self.KEY_WEATHER = os.getenv("KEY_WEATHER")
         self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 
-        print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
+        print(f"[DEBUG] TOKEN: {self.TOKEN}")
+        # print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
         print(f"[DEBUG] KEY_WEATHER: {'SET' if self.KEY_WEATHER else 'NOT SET'}")
         print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
         
@@ -41,7 +45,6 @@ class BookClubBot(commands.Bot):
                 "expectation": "3 chapters per session"
             }
         }
-        print(f"Session initialized: \n{self.session}")
         
         # Color schemes for different embed types
         self.colors = {
@@ -67,8 +70,15 @@ class BookClubBot(commands.Bot):
         # Register commands
         self.setup_commands()
 
+    async def print_nickname(self):
+        await self.wait_until_ready()
+        for guild in self.guilds:
+            nickname = guild.me.nick or guild.me.name
+            print(f"Session initialized as {nickname} with metadata: \n{self.session}")
+
     async def setup_hook(self):
         self.send_reminder_message.start()
+        self.loop.create_task(self.print_nickname())
         
     async def get_weather(self, location: str) -> str:
         """Fetch current weather for a given location."""
