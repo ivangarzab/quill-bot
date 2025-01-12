@@ -13,7 +13,7 @@ from typing import List, Optional
 
 class BookClubBot(commands.Bot):
     def __init__(self):
-        print("Initializing BookClubBot...")
+        print("~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
         intents = discord.Intents.all()
         super().__init__(command_prefix='!', intents=intents)
         
@@ -22,6 +22,10 @@ class BookClubBot(commands.Bot):
         self.TOKEN = os.getenv("TOKEN")
         self.KEY_WEATHER = os.getenv("KEY_WEATHER")
         self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
+
+        print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
+        print(f"[DEBUG] KEY_WEATHER: {'SET' if self.KEY_WEATHER else 'NOT SET'}")
+        print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
         
         # Session details (TODO: Move to database)
         self.session = {
@@ -37,7 +41,7 @@ class BookClubBot(commands.Bot):
                 "expectation": "3 chapters per session"
             }
         }
-        print(f"Session initialized: {self.session}")
+        print(f"Session initialized: \n{self.session}")
         
         # Color schemes for different embed types
         self.colors = {
@@ -113,7 +117,6 @@ class BookClubBot(commands.Bot):
     @tasks.loop(hours=1)
     async def send_reminder_message(self):
         """Send daily reading reminders."""
-        print("Sending reminder message...")
         reminders = [
             'Try to read a minimum of 10 pages per day!',
             'Have you read today?',
@@ -411,10 +414,9 @@ class BookClubBot(commands.Bot):
             print("Sent flipcoin command response.")
 
 def main():
-    print("Starting BookClubBot...")
+    print("~~~~~~~~~~~~ Starting BookClubBot... ~~~~~~~~~~~~")
     bot = BookClubBot()
     bot.run(bot.TOKEN)
-    print("~~~~~~~~~~~~BookClubBot is running~~~~~~~~~~~~")
 
 if __name__ == "__main__":
     main()
