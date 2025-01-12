@@ -8,10 +8,12 @@
   packages = [
     pkgs.sudo
     # pkgs.go
-    pkgs.python311
-    # pkgs.python311Packages.pip
+    pkgs.python312
+    pkgs.python312Packages.pip
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon
+    # pkgs.discord
+    # pkgs.openai
   ];
 
   # Sets environment variables in the workspace
