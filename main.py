@@ -132,7 +132,7 @@ class BookClubBot(commands.Bot):
             'Have you read today?',
             'How many pages have you read today?',
             'If you read 20 minutes a day, you would have read 1.8 million words in a year.',
-            'Have you read? I\'m watching 🦉',
+            'Have you been reading? I\'m watching 🦉',
             'Books are portals to new worlds—have you stepped through one today? 🌍',
             'A chapter a day keeps the boredom away!',
             'Remember, even one page is progress! 📖',
@@ -149,6 +149,7 @@ class BookClubBot(commands.Bot):
         now_pacific = datetime.now(tz=sf_timezone)
         
         if now_pacific.hour == 17:
+            # if it is 5PM Pacific time
             channel = self.get_channel(self.DEFAULT_CHANNEL)
             if channel:
                 embed = discord.Embed(
