@@ -13,6 +13,7 @@ from typing import List, Optional
 
 class BookClubBot(commands.Bot):
     def __init__(self):
+        print("Initializing BookClubBot...")
         intents = discord.Intents.all()
         super().__init__(command_prefix='!', intents=intents)
         
@@ -36,6 +37,7 @@ class BookClubBot(commands.Bot):
                 "expectation": "3 chapters per session"
             }
         }
+        print(f"Session initialized: {self.session}")
         
         # Color schemes for different embed types
         self.colors = {
@@ -66,6 +68,7 @@ class BookClubBot(commands.Bot):
         
     async def get_weather(self, location: str) -> str:
         """Fetch current weather for a given location."""
+        print(f"Fetching weather for location: {location}")
         url = f"https://api.weatherbit.io/v2.0/current?city={location}&key={self.KEY_WEATHER}"
         try:
             response = requests.get(url)
@@ -84,12 +87,15 @@ class BookClubBot(commands.Bot):
             )
             if "rain" in description.lower():
                 message += "; and it is raining!"
+            print(f"Weather fetched successfully: {message}")
             return message
         except Exception as e:
+            print(f"Error fetching weather: {str(e)}")
             return f"Error fetching weather: {str(e)}"
             
     async def get_openai_response(self, prompt: str) -> str:
         """Get response from OpenAI API."""
+        print(f"Fetching OpenAI response for prompt: {prompt}")
         try:
             openai.api_key = self.KEY_OPENAI
             response = openai.Completion.create(
@@ -97,13 +103,17 @@ class BookClubBot(commands.Bot):
                 prompt=prompt,
                 max_tokens=150
             )
-            return response.choices[0].text
+            result = response.choices[0].text
+            print(f"OpenAI response fetched successfully: {result}")
+            return result
         except Exception as e:
+            print(f"Error generating response: {str(e)}")
             return f"Error generating response: {str(e)}"
 
     @tasks.loop(hours=1)
     async def send_reminder_message(self):
         """Send daily reading reminders."""
+        print("Sending reminder message...")
         reminders = [
             'Try to read a minimum of 10 pages per day!',
             'Have you read today?',
@@ -120,7 +130,7 @@ class BookClubBot(commands.Bot):
             'Your book is waiting for you—don\'t keep it lonely!',
             'Reading is self-care. ☯️ Take some time for yourself today!',
             'Every page you read brings you closer to your goal. 🎯'
-    ]
+        ]
         
         sf_timezone = pytz.timezone('US/Pacific')
         now_pacific = datetime.now(tz=sf_timezone)
@@ -134,25 +144,29 @@ class BookClubBot(commands.Bot):
                     color=self.colors["purp"]
                 )
                 await channel.send(embed=embed)
+                print("Reminder message sent.")
 
     async def on_message(self, message: discord.Message):
         """Handle incoming messages."""
         if message.author == self.user:
             return
             
+        print(f"Received message: {message.content}\n\tfrom: {message.author}\n\tin: {message.channel}\n\tat: {message.guild}")
         msg_content = message.content.lower()
         
         # Handle mentions
         if self.user in message.mentions:
             if random.random() < 0.4:
                 await message.channel.send(random.choice(self.greetings))
+                print("Sent greeting message.")
             elif random.random() > 0.5:
                 await message.add_reaction(random.choice(self.reactions))
+                print("Added reaction to message.")
                 
         # Handle keywords
         if 'together' in msg_content:
             await message.channel.send('Reading is done best in community.')
-        # Half-command menat to reach ChatGTP
+        # Half-command meant to reach ChatGTP
         elif 'question:' in msg_content:
             prompt = msg_content.split(':', 1)[1]
             response = await self.get_openai_response(prompt)
@@ -171,6 +185,7 @@ class BookClubBot(commands.Bot):
 
     async def on_member_join(self, member: discord.Member):
         """Welcome new members."""
+        print(f"New member joined: {member.name}")
         channel = self.get_channel(self.DEFAULT_CHANNEL)
         if channel:
             greetings = ["Welcome", "Bienvenido", "Willkommen", "Bienvenue", "Bem-vindo", "Welkom", "Καλως"]
@@ -183,6 +198,7 @@ class BookClubBot(commands.Bot):
             await channel.send(embed=embed)
             
     def setup_commands(self):
+        print("Setting up commands...")
         @self.command()
         async def usage(ctx: commands.Context):
             embed = discord.Embed(
@@ -217,6 +233,7 @@ class BookClubBot(commands.Bot):
             
             embed.set_footer(text="All commands start with !")
             await ctx.send(embed=embed)
+            print("Sent usage command response.")
 
         @self.command()
         async def book(ctx: commands.Context):
@@ -228,6 +245,7 @@ class BookClubBot(commands.Bot):
             embed.add_field(name="Author", value=self.session['book']['author'])
             embed.set_footer(text="Happy reading! 📖")
             await ctx.send(embed=embed)
+            print("Sent book command response.")
 
         @self.command()
         async def duedate(ctx: commands.Context):
@@ -237,6 +255,7 @@ class BookClubBot(commands.Bot):
                 color=self.colors["warning"]
             )
             await ctx.send(embed=embed)
+            print("Sent duedate command response.")
 
         @self.command()
         async def session(ctx: commands.Context):
@@ -271,6 +290,7 @@ class BookClubBot(commands.Bot):
             
             embed.set_footer(text="Keep reading! 📖")
             await ctx.send(embed=embed)
+            print("Sent session command response.")
 
         @self.command()
         async def discussions(ctx: commands.Context):
@@ -299,9 +319,11 @@ class BookClubBot(commands.Bot):
             
             embed.set_footer(text="Don't stop reading! 📖")
             await ctx.send(embed=embed)
+            print("Sent discussions command response.")
 
         @self.command()
         async def weather(ctx: commands.Context, *, location: str):
+            print(f"Weather command received for location: {location}")
             weather_info = await self.get_weather(location)
             
             embed = discord.Embed(
@@ -315,6 +337,7 @@ class BookClubBot(commands.Bot):
             embed.set_footer(text="Weather information last updated")
             
             await ctx.send(embed=embed)
+            print("Sent weather command response.")
 
         @self.command()
         async def funfact(ctx: commands.Context):
@@ -344,6 +367,7 @@ class BookClubBot(commands.Bot):
             )
             embed.set_footer(text=random.choice(closers))
             await ctx.send(embed=embed)
+            print("Sent funfact command response.")
 
         @self.command()
         async def choose(ctx: commands.Context, *, arguments):
@@ -362,6 +386,7 @@ class BookClubBot(commands.Bot):
                 color=self.colors["fun"]
             )
             await ctx.send(embed=embed)
+            print("Sent choose command response.")
 
         @self.command()
         async def rolldice(ctx: commands.Context):
@@ -372,6 +397,7 @@ class BookClubBot(commands.Bot):
                 color=self.colors["fun"]
             )
             await ctx.send(embed=embed)
+            print("Sent rolldice command response.")
 
         @self.command()
         async def flipcoin(ctx: commands.Context):
@@ -382,10 +408,13 @@ class BookClubBot(commands.Bot):
                 color=self.colors["fun"]
             )
             await ctx.send(embed=embed)
+            print("Sent flipcoin command response.")
 
 def main():
+    print("Starting BookClubBot...")
     bot = BookClubBot()
     bot.run(bot.TOKEN)
+    print("~~~~~~~~~~~~BookClubBot is running~~~~~~~~~~~~")
 
 if __name__ == "__main__":
     main()
