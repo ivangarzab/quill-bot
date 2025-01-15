@@ -11,6 +11,7 @@ import requests
 import openai
 from typing import List, Optional
 from dotenv import load_dotenv
+from database import BookClubDatabase
 
 class BookClubBot(commands.Bot):
     def __init__(self):
@@ -26,25 +27,29 @@ class BookClubBot(commands.Bot):
         self.KEY_WEATHER = os.getenv("KEY_WEATHER")
         self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
 
-        print(f"[DEBUG] TOKEN: {self.TOKEN}")
-        # print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
+        print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
         print(f"[DEBUG] KEY_WEATHER: {'SET' if self.KEY_WEATHER else 'NOT SET'}")
         print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
         
-        # Session details (TODO: Move to database)
-        self.session = {
-            "number": 0,
-            "due_date": "End of MARCH!",
-            "book": {
-                "title": "Farenheit 451",
-                "author": "Ray Bradbury"
-            },
-            "discussions": {
-                "amount": 3,
-                "frequency": "End of month, for 3 months",
-                "expectation": "3 chapters per session"
-            }
-        }
+        # Initialize database
+        self.db = BookClubDatabase()
+
+        # self.session = {
+        #     "number": 0,
+        #     "due_date": "End of MARCH!",
+        #     "book": {
+        #         "title": "Farenheit 451",
+        #         "author": "Ray Bradbury"
+        #     },
+        #     "discussions": {
+        #         "amount": 3,
+        #         "frequency": "End of month, for 3 months",
+        #         "expectation": "3 chapters per session"
+        #     }
+        # }
+        
+        # Load session details from database
+        self.load_session_details()
         
         # Color schemes for different embed types
         self.colors = {
@@ -70,11 +75,33 @@ class BookClubBot(commands.Bot):
         # Register commands
         self.setup_commands()
 
+    def load_session_details(self):
+        """Load session details from the database."""
+        club_data = self.db.get_club(0)  # Assuming club_id is 0
+        if club_data:
+            #TODO(What do we do with the club-level data?)
+            session = club_data["sessions"][0]
+            self.session = {
+                "number": session["number"],
+                "due_date": session["due_date"],
+                "book": {
+                    "title": session["book_title"],
+                    "author": session["book_author"]
+                },
+                "discussions": {
+                    "amount": len(club_data["sessions"]),
+                    "frequency": "End of month, for 3 months",  # Example value
+                    "expectation": "3 chapters per session"  # Example value
+                }
+            }
+        else:
+            print("No session data found in the database.")
+
     async def print_nickname(self):
         await self.wait_until_ready()
         for guild in self.guilds:
             nickname = guild.me.nick or guild.me.name
-            print(f"Session initialized as {nickname} with metadata: \n{self.session}")
+            print(f"~~~~~~~~~~~~ Session initialized as {nickname} ~~~~~~~~~~~~\n\twith metadata: \n{self.session}")
 
     async def setup_hook(self):
         self.send_reminder_message.start()
@@ -210,7 +237,14 @@ class BookClubBot(commands.Bot):
             )
             embed.set_footer(text="Welcome to the Book Club!")
             await channel.send(embed=embed)
-            
+        
+        # Save new member to the database
+        self.db.save_club({
+            "id": 0,  # Assuming club_id is 0
+            "name": "Quill's Bookclub",
+            "members": [{"id": member.id, "name": member.name, "points": 0, "number_of_books_read": 0}]
+        })
+
     def setup_commands(self):
         print("Setting up commands...")
         @self.command()
@@ -305,6 +339,9 @@ class BookClubBot(commands.Bot):
             embed.set_footer(text="Keep reading! 📖")
             await ctx.send(embed=embed)
             print("Sent session command response.")
+            
+            # Save session details to the database
+            self.db.save_session(0, self.session)  # Assuming club_id is 0
 
         @self.command()
         async def discussions(ctx: commands.Context):
