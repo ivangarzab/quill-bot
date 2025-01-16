@@ -11,7 +11,8 @@ import requests
 import openai
 from typing import List, Optional
 from dotenv import load_dotenv
-from database import BookClubDatabase
+from database import Database
+import json
 
 class BookClubBot(commands.Bot):
     def __init__(self):
@@ -32,23 +33,7 @@ class BookClubBot(commands.Bot):
         print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
         
         # Initialize database
-        self.db = BookClubDatabase()
-
-        # self.session = {
-        #     "number": 0,
-        #     "due_date": "End of MARCH!",
-        #     "book": {
-        #         "title": "Farenheit 451",
-        #         "author": "Ray Bradbury"
-        #     },
-        #     "discussions": {
-        #         "amount": 3,
-        #         "frequency": "End of month, for 3 months",
-        #         "expectation": "3 chapters per session"
-        #     }
-        # }
-        
-        # Load session details from database
+        self.db = Database()
         self.load_session_details()
         
         # Color schemes for different embed types
@@ -77,31 +62,13 @@ class BookClubBot(commands.Bot):
 
     def load_session_details(self):
         """Load session details from the database."""
-        club_data = self.db.get_club(0)  # Assuming club_id is 0
-        if club_data:
-            #TODO(What do we do with the club-level data?)
-            session = club_data["sessions"][0]
-            self.session = {
-                "number": session["number"],
-                "due_date": session["due_date"],
-                "book": {
-                    "title": session["book_title"],
-                    "author": session["book_author"]
-                },
-                "discussions": {
-                    "amount": len(club_data["sessions"]),
-                    "frequency": "End of month, for 3 months",  # Example value
-                    "expectation": "3 chapters per session"  # Example value
-                }
-            }
-        else:
-            print("No session data found in the database.")
+        self.club = self.db.get_club()
 
     async def print_nickname(self):
         await self.wait_until_ready()
         for guild in self.guilds:
             nickname = guild.me.nick or guild.me.name
-            print(f"~~~~~~~~~~~~ Session initialized as {nickname} ~~~~~~~~~~~~\n\twith metadata: \n{self.session}")
+            print(f"~~~~~~~~~~~~ Instance initialized as '{nickname}' ~~~~~~~~~~~~\nwith metadata: \n{json.dumps(self.club, separators=(',', ':'))}")
 
     async def setup_hook(self):
         self.send_reminder_message.start()
@@ -287,10 +254,10 @@ class BookClubBot(commands.Bot):
         async def book(ctx: commands.Context):
             embed = discord.Embed(
                 title="📚 Current Book",
-                description=f"**{self.session['book']['title']}**",
+                description=f"**{self.club['activeSession']['book']['title']}**",
                 color=self.colors["info"]
             )
-            embed.add_field(name="Author", value=self.session['book']['author'])
+            embed.add_field(name="Author", value=f"{self.club['activeSession']['book']['author']}")
             embed.set_footer(text="Happy reading! 📖")
             await ctx.send(embed=embed)
             print("Sent book command response.")
@@ -299,7 +266,7 @@ class BookClubBot(commands.Bot):
         async def duedate(ctx: commands.Context):
             embed = discord.Embed(
                 title="📅 Due Date",
-                description=f"Session due date: **{self.session['due_date']}**",
+                description=f"Session due date: **{self.club['activeSession']['dueDate']}**",
                 color=self.colors["warning"]
             )
             await ctx.send(embed=embed)
@@ -312,36 +279,33 @@ class BookClubBot(commands.Bot):
                 color=self.colors["info"]
             )
             
-            embed.add_field(
-                name="Session Number",
-                value=f"#{self.session['number']}",
-                inline=False
-            )
+            # embed.add_field(
+            #     name="Session Number",
+            #     value=f"#{self.club['activeSession']['number']}",
+            #     inline=False
+            # )
             
             embed.add_field(
                 name="Book",
-                value=f"{self.session['book']['title']}",
+                value=f"{self.club['activeSession']['book']['title']}",
                 inline=True
             )
             
             embed.add_field(
                 name="Author",
-                value=f"{self.session['book']['author']}",
+                value=f"{self.club['activeSession']['book']['author']}",
                 inline=True
             )
             
             embed.add_field(
                 name="Due Date",
-                value=f"{self.session['due_date']}",
+                value=f"{self.club['activeSession']['dueDate']}",
                 inline=False
             )
             
             embed.set_footer(text="Keep reading! 📖")
             await ctx.send(embed=embed)
             print("Sent session command response.")
-            
-            # Save session details to the database
-            self.db.save_session(0, self.session)  # Assuming club_id is 0
 
         @self.command()
         async def discussions(ctx: commands.Context):
@@ -352,19 +316,14 @@ class BookClubBot(commands.Bot):
             
             embed.add_field(
                 name="Number of Discussions",
-                value=f"#{self.session['discussions']['amount']}",
+                value=f"#{len(self.club['activeSession']['discussions'])}",
                 inline=False
             )
             
+            # TODO: Stop using the first discussion only
             embed.add_field(
-                name="Approximate Date",
-                value=f"{self.session['discussions']['frequency']}",
-                inline=False
-            )
-            
-            embed.add_field(
-                name="Progress Expectation",
-                value=f"{self.session['discussions']['expectation']}",
+                name="Next discussion",
+                value=f"{self.club['activeSession']['discussions'][0]['date']}",
                 inline=False
             )
             

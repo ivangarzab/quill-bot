@@ -1,138 +1,242 @@
 import sqlite3
+import json
 
-class BookClubDatabase:
+class Database:
     def __init__(self, db_name="bookclub.db"):
-        self.conn = sqlite3.connect(db_name)
-        self.create_tables()
+        # Initialize a connection to the SQLite database
+        self.connection = sqlite3.connect(db_name)
+        self.create_tables()  # Create necessary tables
 
     def create_tables(self):
-        with self.conn:
-            # Create Clubs table
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS clubs (
-                    id INTEGER PRIMARY KEY,
+        # Create tables for the schema if they don't already exist
+        with self.connection:
+            # Create 'Clubs' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS Clubs (
+                    id TEXT PRIMARY KEY,
                     name TEXT NOT NULL
                 );
             """)
-            # Create Members table
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS members (
+
+            # Create 'Members' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS Members (
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
                     points INTEGER DEFAULT 0,
-                    number_of_books_read INTEGER DEFAULT 0
+                    numberOfBooksRead INTEGER DEFAULT 0
                 );
             """)
-            # Create ClubMembers table
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS club_members (
-                    club_id INTEGER,
+
+            # Create 'MemberClubs' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS MemberClubs (
                     member_id INTEGER,
-                    FOREIGN KEY (club_id) REFERENCES clubs(id),
-                    FOREIGN KEY (member_id) REFERENCES members(id),
-                    PRIMARY KEY (club_id, member_id)
+                    club_id TEXT,
+                    PRIMARY KEY (member_id, club_id),
+                    FOREIGN KEY (member_id) REFERENCES Members(id),
+                    FOREIGN KEY (club_id) REFERENCES Clubs(id)
                 );
             """)
-            # Create Sessions table
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS sessions (
+
+            # Create 'Sessions' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS Sessions (
                     id TEXT PRIMARY KEY,
-                    club_id INTEGER,
-                    number INTEGER,
-                    book_title TEXT,
-                    book_author TEXT,
-                    due_date TEXT,
-                    default_channel INTEGER,
-                    FOREIGN KEY (club_id) REFERENCES clubs(id)
+                    club_id TEXT NOT NULL,
+                    book_id INTEGER,
+                    dueDate TEXT,
+                    defaultChannel INTEGER,
+                    FOREIGN KEY (club_id) REFERENCES Clubs(id)
                 );
             """)
-            # Create Discussions table
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS discussions (
+
+            # Create 'Books' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS Books (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    author TEXT NOT NULL,
+                    edition TEXT,
+                    year INTEGER,
+                    ISBN INTEGER
+                );
+            """)
+
+            # Create 'Discussions' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS Discussions (
                     id TEXT PRIMARY KEY,
-                    session_id TEXT,
-                    title TEXT,
-                    date TEXT,
+                    session_id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    date TEXT NOT NULL,
                     location TEXT,
-                    FOREIGN KEY (session_id) REFERENCES sessions(id)
+                    FOREIGN KEY (session_id) REFERENCES Sessions(id)
                 );
             """)
 
-    def save_club(self, club):
-        with self.conn:
-            self.conn.execute("INSERT INTO clubs (id, name) VALUES (?, ?)", (club["id"], club["name"]))
-            for member in club["members"]:
-                self.conn.execute("""
-                    INSERT OR IGNORE INTO members (id, name, points, number_of_books_read)
+            # Create 'ShameList' table
+            self.connection.execute("""
+                CREATE TABLE IF NOT EXISTS ShameList (
+                    session_id TEXT,
+                    member_id INTEGER,
+                    PRIMARY KEY (session_id, member_id),
+                    FOREIGN KEY (session_id) REFERENCES Sessions(id),
+                    FOREIGN KEY (member_id) REFERENCES Members(id)
+                );
+            """)
+
+    def save_club(self, data):
+        with self.connection:
+            # Insert club data
+            self.connection.execute("INSERT OR IGNORE INTO Clubs (id, name) VALUES (?, ?)", (data['id'], data['name']))
+
+            # Insert member data
+            for member in data['members']:
+                self.connection.execute("""
+                    INSERT OR IGNORE INTO Members (id, name, points, numberOfBooksRead)
                     VALUES (?, ?, ?, ?)
-                """, (member["id"], member["name"], member["points"], member["numberOfBooksRead"]))
-                self.conn.execute("""
-                    INSERT INTO club_members (club_id, member_id) VALUES (?, ?)
-                """, (club["id"], member["id"]))
-            if "activeSession" in club:
-                self.save_session(club["id"], club["activeSession"])
+                """, (member['id'], member['name'], member['points'], member['numberOfBooksRead']))
 
-    def save_session(self, club_id, session):
-        with self.conn:
-            self.conn.execute("""
-                INSERT INTO sessions (id, club_id, number, book_title, book_author, due_date, default_channel)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                session["id"], club_id, session["number"],
-                session["book"]["title"], session["book"]["author"],
-                session["dueDate"], session["defaultChannel"]
-            ))
-            for discussion in session["discussions"]:
-                self.conn.execute("""
-                    INSERT INTO discussions (id, session_id, title, date, location)
+                # Link members to clubs in the MemberClubs table
+                for club_id in member['clubs']:
+                    self.connection.execute("INSERT OR IGNORE INTO MemberClubs (member_id, club_id) VALUES (?, ?)", (member['id'], club_id))
+
+            # Insert book data and retrieve the auto-generated book ID
+            book = data['activeSession']['book']
+            book_id = self.connection.execute("""
+                INSERT INTO Books (title, author, edition, year, ISBN)
+                VALUES (?, ?, ?, ?, ?)
+            """, (book['title'], book['author'], book['edition'], book['year'], book['ISBN'])).lastrowid
+
+            # Insert session data
+            session = data['activeSession']
+            self.connection.execute("""
+                INSERT OR IGNORE INTO Sessions (id, club_id, book_id, dueDate, defaultChannel)
+                VALUES (?, ?, ?, ?, ?)
+            """, (session['id'], session['club_id'], book_id, session['dueDate'], session['defaultChannel']))
+
+            # Insert discussion data
+            for discussion in session['discussions']:
+                self.connection.execute("""
+                    INSERT OR IGNORE INTO Discussions (id, session_id, title, date, location)
                     VALUES (?, ?, ?, ?, ?)
-                """, (
-                    discussion["id"], session["id"], discussion["title"],
-                    discussion["date"], discussion["location"]
-                ))
+                """, (discussion['id'], session['id'], discussion['title'], discussion['date'], discussion['location']))
 
-    def get_club(self, club_id):
-        """Retrieve a club with its members and sessions."""
-        with self.conn:
-            club = self.conn.execute("SELECT * FROM clubs WHERE id = ?", (club_id,)).fetchone()
-            members = self.conn.execute("""
-                SELECT members.* FROM members
-                JOIN club_members ON members.id = club_members.member_id
-                WHERE club_members.club_id = ?
-            """, (club_id,)).fetchall()
-            sessions = self.conn.execute("SELECT * FROM sessions WHERE club_id = ?", (club_id,)).fetchall()
-            return {"club": club, "members": members, "sessions": sessions}
+    def get_club(self):
+        with self.connection:
+            # Fetch club details
+            club = self.connection.execute("SELECT * FROM Clubs").fetchone()
+            # Fetch all members
+            members = self.connection.execute("SELECT * FROM Members").fetchall()
+            # Fetch session details
+            sessions = self.connection.execute("SELECT * FROM Sessions").fetchall()
+            # Fetch books associated with sessions
+            books = self.connection.execute("SELECT * FROM Books").fetchall()
+            # Fetch discussions associated with sessions
+            discussions = self.connection.execute("SELECT * FROM Discussions").fetchall()
 
-    def update_member_points(self, member_id, points):
-        """Update a member's points."""
-        with self.conn:
-            self.conn.execute("UPDATE members SET points = ? WHERE id = ?", (points, member_id))
+        # Transform member data into the required format
+        members_data = []
+        for member in members:
+            # Fetch all clubs the member belongs to
+            clubs = self.connection.execute("SELECT club_id FROM MemberClubs WHERE member_id = ?", (member[0],)).fetchall()
+            members_data.append({
+                "id": member[0],
+                "name": member[1],
+                "points": member[2],
+                "clubs": [club_id[0] for club_id in clubs],
+                "numberOfBooksRead": member[3]
+            })
 
-    def delete_club(self, club_id):
-        """Delete a club and all associated data."""
-        with self.conn:
-            self.conn.execute("DELETE FROM club_members WHERE club_id = ?", (club_id,))
-            self.conn.execute("DELETE FROM sessions WHERE club_id = ?", (club_id,))
-            self.conn.execute("DELETE FROM clubs WHERE id = ?", (club_id,))
+        # Transform session data into the required format
+        session_data = None
+        if sessions:
+            session = sessions[0]  # Assuming only one active session
+            # Fetch book details for the session
+            book = self.connection.execute("SELECT * FROM Books WHERE id = ?", (session[2],)).fetchone()
+            # Fetch discussions for the session
+            session_discussions = [
+                {
+                    "id": discussion[0],
+                    "session_id": discussion[1],
+                    "title": discussion[2],
+                    "date": discussion[3],
+                    "location": discussion[4]
+                }
+                for discussion in discussions if discussion[1] == session[0]
+            ]
 
-# Example usage
+            session_data = {
+                "id": session[0],
+                "club_id": session[1],
+                "book": {
+                    "title": book[1],
+                    "author": book[2],
+                    "edition": book[3],
+                    "year": book[4],
+                    "ISBN": book[5]
+                },
+                "dueDate": session[3],
+                "defaultChannel": session[4],
+                "shameList": [],
+                "discussions": session_discussions
+            }
+
+        # Return the full reconstructed club data
+        return {
+            "id": club[0],
+            "name": club[1],
+            "members": members_data,
+            "activeSession": session_data,
+            "pastSessions": []
+        }
+
 if __name__ == "__main__":
-    db = BookClubDatabase()
-
-    # Example JSON data
-    default_data = {
-        "id": 0,
+    # JSON data provided by the user
+    json_data = {
+        "id": "0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3",
         "name": "Quill's Bookclub",
         "members": [
-            {"id": 0, "name": "@ivangarzab", "points": 0, "clubs": [0], "numberOfBooksRead": 0},
-            {"id": 1, "name": "@chitho", "points": 0, "clubs": [0], "numberOfBooksRead": 0},
-            {"id": 2, "name": "@ket092", "points": 0, "clubs": [0], "numberOfBooksRead": 0},
-            {"id": 3, "name": "@.lngr.", "points": 0, "clubs": [0], "numberOfBooksRead": 0},
-            {"id": 4, "name": "@zatiba", "points": 0, "clubs": [0], "numberOfBooksRead": 0},
+            {
+                "id": 0,
+                "name": "@ivangarzab",
+                "points": 0,
+                "clubs": ["0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3"],
+                "numberOfBooksRead": 0
+            },
+            {
+                "id": 1,
+                "name": "@chitho",
+                "points": 0,
+                "clubs": ["0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3"],
+                "numberOfBooksRead": 0
+            },
+            {
+                "id": 2,
+                "name": "@ket092",
+                "points": 0,
+                "clubs": ["0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3"],
+                "numberOfBooksRead": 0
+            },
+            {
+                "id": 3,
+                "name": "@.LNGR.",
+                "points": 0,
+                "clubs": ["0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3"],
+                "numberOfBooksRead": 0
+            },
+            {
+                "id": 4,
+                "name": "@Zatiba",
+                "points": 0,
+                "clubs": ["0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3"],
+                "numberOfBooksRead": 0
+            }
         ],
         "activeSession": {
-            "number": 0,
-            "id": "1:0",
+            "id": "cfae184f-8214-4e42-b763-52e25650d69a",
+            "club_id": "0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3",
             "book": {
                 "title": "Farenheit 451",
                 "author": "Ray Bradbury",
@@ -142,18 +246,35 @@ if __name__ == "__main__":
             },
             "dueDate": "3/31/2025",
             "defaultChannel": 1327357851827572872,
+            "shameList": [],
             "discussions": [
-                {"number": 0, "id": "1:0-0", "title": "First discussion", "date": "1/31/2025", "location": "virtual"}
+                {
+                    "id": "95a8f0dd-93eb-48f0-a1a3-8f513612b570",
+                    "session_id": "cfae184f-8214-4e42-b763-52e25650d69a",
+                    "title": "Frist discussion",
+                    "date": "1/31/2025",
+                    "location": "virtual"
+                },
+                {
+                    "id": "1658184c-4a1d-4869-951f-e95869fd0cda",
+                    "session_id": "cfae184f-8214-4e42-b763-52e25650d69a",
+                    "title": "Second discussion",
+                    "date": "2/28/2025",
+                    "location": "virtual"
+                },
+                {
+                    "id": "d6cfdd24-9242-4416-837b-f25d16814b61",
+                    "session_id": "cfae184f-8214-4e42-b763-52e25650d69a",
+                    "title": "Final discussion",
+                    "date": "3/31/2025",
+                    "location": "virtual"
+                }
             ]
-        }
+        },
+        "pastSessions": []
     }
 
-    # Save the JSON data to the database
-    db.save_club(default_data)
-
-    # Update a member's points
-    db.update_member_points(0, 10)
-
-    # Retrieve and print the club data
-    data = db.get_club(1)
-    print(data)
+    db = Database()
+    db.save_club(json_data)
+    retrieved_data = db.get_club()
+    print(json.dumps(retrieved_data, indent=4))
