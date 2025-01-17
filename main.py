@@ -25,11 +25,10 @@ class BookClubBot(commands.Bot):
         # Configuration
         self.DEFAULT_CHANNEL = 1327357851827572872
         self.TOKEN = os.getenv("TOKEN")
-        self.KEY_WEATHER = os.getenv("KEY_WEATHER")
-        self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
-
         print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
+        self.KEY_WEATHER = os.getenv("KEY_WEATHER")
         print(f"[DEBUG] KEY_WEATHER: {'SET' if self.KEY_WEATHER else 'NOT SET'}")
+        self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
         print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
         
         # Initialize database
@@ -187,7 +186,7 @@ class BookClubBot(commands.Bot):
             await message.channel.send(embed=embed)
             
         # Random reactions
-        if not message.content.startswith('!') and random.random() < 0.4:
+        if not message.content.startswith('!') and random.random() < 0.3:
             await message.add_reaction(random.choice(self.reactions))
             
         await self.process_commands(message)
