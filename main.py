@@ -10,7 +10,7 @@ import calendar
 import requests
 import openai
 from typing import List, Optional
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from database import Database
 import json
 
@@ -20,7 +20,7 @@ class BookClubBot(commands.Bot):
         intents = discord.Intents.all()
         super().__init__(command_prefix='!', intents=intents)
 
-        load_dotenv(override=True)
+        # load_dotenv(override=True)
         
         # Configuration
         self.DEFAULT_CHANNEL = 1327357851827572872
