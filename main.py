@@ -11,7 +11,7 @@ import requests
 import openai
 from typing import List, Optional
 # from dotenv import load_dotenv
-from database import Database
+from database.api import BookClubDatabase
 import json
 
 class BookClubBot(commands.Bot):
@@ -32,7 +32,7 @@ class BookClubBot(commands.Bot):
         print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
         
         # Initialize database
-        self.db = Database()
+        self.db = BookClubDatabase()
         self.load_session_details()
         
         # Color schemes for different embed types
