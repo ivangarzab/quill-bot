@@ -123,6 +123,92 @@ class Database:
                     VALUES (?, ?, ?, ?, ?)
                 """, (discussion['id'], session['id'], discussion['title'], discussion['date'], discussion['location']))
 
+    def update_club(self, club_id, name):
+        """Update the name of a club."""
+        with self.connection:
+            self.connection.execute("UPDATE Clubs SET name = ? WHERE id = ?", (name, club_id))
+
+    def add_member(self, member_id, name, points, number_of_books_read, clubs):
+        """Add a new member and associate them with clubs."""
+        with self.connection:
+            self.connection.execute("""
+                INSERT OR IGNORE INTO Members (id, name, points, numberOfBooksRead)
+                VALUES (?, ?, ?, ?)
+            """, (member_id, name, points, number_of_books_read))
+            for club_id in clubs:
+                self.connection.execute("INSERT OR IGNORE INTO MemberClubs (member_id, club_id) VALUES (?, ?)", (member_id, club_id))
+
+    def get_session_details(self, session_id):
+        """Retrieve session details, including book and discussions."""
+        with self.connection:
+            session = self.connection.execute("SELECT * FROM Sessions WHERE id = ?", (session_id,)).fetchone()
+            if not session:
+                return None
+
+            book = self.connection.execute("SELECT * FROM Books WHERE id = ?", (session[2],)).fetchone()
+            discussions = self.connection.execute("SELECT * FROM Discussions WHERE session_id = ?", (session_id,)).fetchall()
+
+            return {
+                "id": session[0],
+                "club_id": session[1],
+                "book": {
+                    "title": book[1],
+                    "author": book[2],
+                    "edition": book[3],
+                    "year": book[4],
+                    "ISBN": book[5]
+                },
+                "dueDate": session[3],
+                "defaultChannel": session[4],
+                "discussions": [
+                    {
+                        "id": discussion[0],
+                        "title": discussion[2],
+                        "date": discussion[3],
+                        "location": discussion[4]
+                    } for discussion in discussions
+                ]
+            }
+
+    def add_to_shame_list(self, session_id, member_id):
+        """Add a member to the shame list for a session."""
+        with self.connection:
+            self.connection.execute("INSERT OR IGNORE INTO ShameList (session_id, member_id) VALUES (?, ?)", (session_id, member_id))
+
+    def update_session(self, session_id, club_id=None, book_id=None, dueDate=None, defaultChannel=None):
+        """Update session details."""
+        with self.connection:
+            if club_id:
+                self.connection.execute("UPDATE Sessions SET club_id = ? WHERE id = ?", (club_id, session_id))
+            if book_id:
+                self.connection.execute("UPDATE Sessions SET book_id = ? WHERE id = ?", (book_id, session_id))
+            if dueDate:
+                self.connection.execute("UPDATE Sessions SET dueDate = ? WHERE id = ?", (dueDate, session_id))
+            if defaultChannel:
+                self.connection.execute("UPDATE Sessions SET defaultChannel = ? WHERE id = ?", (defaultChannel, session_id))
+
+    def update_discussion(self, discussion_id, session_id=None, title=None, date=None, location=None):
+        """Update discussion details."""
+        with self.connection:
+            if session_id:
+                self.connection.execute("UPDATE Discussions SET session_id = ? WHERE id = ?", (session_id, discussion_id))
+            if title:
+                self.connection.execute("UPDATE Discussions SET title = ? WHERE id = ?", (title, discussion_id))
+            if date:
+                self.connection.execute("UPDATE Discussions SET date = ? WHERE id = ?", (date, discussion_id))
+            if location:
+                self.connection.execute("UPDATE Discussions SET location = ? WHERE id = ?", (location, discussion_id))
+
+    def update_member(self, member_id, name=None, points=None, numberOfBooksRead=None):
+        """Update member details."""
+        with self.connection:
+            if name:
+                self.connection.execute("UPDATE Members SET name = ? WHERE id = ?", (name, member_id))
+            if points:
+                self.connection.execute("UPDATE Members SET points = ? WHERE id = ?", (points, member_id))
+            if numberOfBooksRead:
+                self.connection.execute("UPDATE Members SET numberOfBooksRead = ? WHERE id = ?", (numberOfBooksRead, member_id))
+
     def get_club(self):
         with self.connection:
             # Fetch club details

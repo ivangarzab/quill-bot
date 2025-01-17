@@ -1,7 +1,7 @@
 import os
 import random
 import discord
-from discord import Color
+from discord import app_commands, Color
 from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime, timedelta
@@ -71,6 +71,7 @@ class BookClubBot(commands.Bot):
             print(f"~~~~~~~~~~~~ Instance initialized as '{nickname}' ~~~~~~~~~~~~\nwith metadata: \n{json.dumps(self.club, separators=(',', ':'))}")
 
     async def setup_hook(self):
+        await self.tree.sync()  # Sync slash commands
         self.send_reminder_message.start()
         self.loop.create_task(self.print_nickname())
         
@@ -213,9 +214,10 @@ class BookClubBot(commands.Bot):
         })
 
     def setup_commands(self):
-        print("Setting up commands...")
-        @self.command()
-        async def usage(ctx: commands.Context):
+        print("Setting up slash commands...")
+        
+        @self.tree.command(name="usage", description="Show all available commands")
+        async def usage(interaction: discord.Interaction):
             embed = discord.Embed(
                 title="📚 Quill's Commands",
                 description="Here's everything I can help you with!",
@@ -224,34 +226,34 @@ class BookClubBot(commands.Bot):
             
             embed.add_field(
                 name="📖 Reading Commands",
-                value="• `!session` - Show all session details\n"
-                      "• `!book` - Show current book details\n"
-                      "• `!duedate` - Show the session's due date\n"
-                      "• `!discussions` - Show the session's discussion details",
+                value="• `/session` - Show all session details\n"
+                      "• `/book` - Show current book details\n"
+                      "• `/duedate` - Show the session's due date\n"
+                      "• `/discussions` - Show the session's discussion details",
                 inline=False
             )
             
             embed.add_field(
                 name="🎲 Fun Commands",
-                value="• `!rolldice` - Roll a six-sided die\n"
-                      "• `!flipcoin` - Flip a coin\n"
-                      "• `!choose <options>` - Choose from given options",
+                value="• `/rolldice` - Roll a six-sided die\n"
+                      "• `/flipcoin` - Flip a coin\n"
+                      "• `/choose` - Choose from given options",
                 inline=False
             )
             
             embed.add_field(
                 name="🌤 Utility Commands",
-                value="• `!weather <city>` - Get the city weather\n"
-                      "• `!funfact` - Get a random book-related fact",
+                value="• `/weather <city>` - Get the city weather\n"
+                      "• `/funfact` - Get a random book-related fact",
                 inline=False
             )
             
-            embed.set_footer(text="All commands start with !")
-            await ctx.send(embed=embed)
+            embed.set_footer(text="*Use / to access all commands!*")
+            await interaction.response.send_message(embed=embed)
             print("Sent usage command response.")
 
-        @self.command()
-        async def book(ctx: commands.Context):
+        @self.tree.command(name="book", description="Show current book details")
+        async def book(interaction: discord.Interaction):
             embed = discord.Embed(
                 title="📚 Current Book",
                 description=f"**{self.club['activeSession']['book']['title']}**",
@@ -259,31 +261,25 @@ class BookClubBot(commands.Bot):
             )
             embed.add_field(name="Author", value=f"{self.club['activeSession']['book']['author']}")
             embed.set_footer(text="Happy reading! 📖")
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent book command response.")
 
-        @self.command()
-        async def duedate(ctx: commands.Context):
+        @self.tree.command(name="duedate", description="Show the session's due date")
+        async def duedate(interaction: discord.Interaction):
             embed = discord.Embed(
                 title="📅 Due Date",
                 description=f"Session due date: **{self.club['activeSession']['dueDate']}**",
                 color=self.colors["warning"]
             )
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent duedate command response.")
 
-        @self.command()
-        async def session(ctx: commands.Context):
+        @self.tree.command(name="session", description="Show current session details")
+        async def session(interaction: discord.Interaction):
             embed = discord.Embed(
                 title="📚 Current Session Details",
                 color=self.colors["info"]
             )
-            
-            # embed.add_field(
-            #     name="Session Number",
-            #     value=f"#{self.club['activeSession']['number']}",
-            #     inline=False
-            # )
             
             embed.add_field(
                 name="Book",
@@ -304,11 +300,11 @@ class BookClubBot(commands.Bot):
             )
             
             embed.set_footer(text="Keep reading! 📖")
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent session command response.")
 
-        @self.command()
-        async def discussions(ctx: commands.Context):
+        @self.tree.command(name="discussions", description="Show the session's discussion details")
+        async def discussions(interaction: discord.Interaction):
             embed = discord.Embed(
                 title="📚 Book Discussion Details",
                 color=self.colors["info"]
@@ -320,7 +316,6 @@ class BookClubBot(commands.Bot):
                 inline=False
             )
             
-            # TODO: Stop using the first discussion only
             embed.add_field(
                 name="Next discussion",
                 value=f"{self.club['activeSession']['discussions'][0]['date']}",
@@ -328,16 +323,18 @@ class BookClubBot(commands.Bot):
             )
             
             embed.set_footer(text="Don't stop reading! 📖")
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent discussions command response.")
 
-        @self.command()
-        async def weather(ctx: commands.Context, *, location: str):
+        @self.tree.command(name="weather", description="Get the weather for a specific city")
+        @app_commands.describe(location="The city to get weather for")
+        async def weather(interaction: discord.Interaction, location: str):
             print(f"Weather command received for location: {location}")
-            weather_info = await self.get_weather(location)
+            await interaction.response.defer()  # Defer the response since weather API call might take time
             
+            weather_info = await self.get_weather(location)
             embed = discord.Embed(
-                title=f"\ud83c\udf24 Weather for {location.title()}",
+                title=f"🌤 Weather for {location.title()}",
                 description=weather_info,
                 color=self.colors["info"]
             )
@@ -346,11 +343,11 @@ class BookClubBot(commands.Bot):
             embed.timestamp = datetime.now(tz=sf_timezone)
             embed.set_footer(text="Weather information last updated")
             
-            await ctx.send(embed=embed)
+            await interaction.followup.send(embed=embed)
             print("Sent weather command response.")
 
-        @self.command()
-        async def funfact(ctx: commands.Context):
+        @self.tree.command(name="funfact", description="Get a random book-related fun fact")
+        async def funfact(interaction: discord.Interaction):
             facts = [
                 'Abibliophobia is the fear of running out of reading material.',
                 'The Harvard University library has four law books bound in human skin.',
@@ -362,12 +359,12 @@ class BookClubBot(commands.Bot):
                 'Bibliosmia is the word for loving the smell of old books.'
             ]
             closers = [
-              'Did you know? 🤓',
-              'Riddle me this ❔❓',
-              'Knowledge is power! 💡',
-              'Now you know ‼️',
-              'Food for thought! 🍎',
-              'Curiosity never killed the bookworm! 🐛'
+                'Did you know? 🤓',
+                'Riddle me this ❔❓',
+                'Knowledge is power! 💡',
+                'Now you know ‼️',
+                'Food for thought! 🍎',
+                'Curiosity never killed the bookworm! 🐛'
             ]
             
             embed = discord.Embed(
@@ -376,13 +373,18 @@ class BookClubBot(commands.Bot):
                 color=self.colors["purp"]
             )
             embed.set_footer(text=random.choice(closers))
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent funfact command response.")
 
-        @self.command()
-        async def choose(ctx: commands.Context, *, arguments):
-            options = arguments.split()
-            result = random.choice(options)
+        @self.tree.command(name="choose", description="I will choose from the options you give me")
+        @app_commands.describe(options="Space-separated options to choose from")
+        async def choose(interaction: discord.Interaction, options: str):
+            choices = options.split()
+            if not choices:
+                await interaction.response.send_message("Please provide some options to choose from!", ephemeral=True)
+                return
+                
+            result = random.choice(choices)
             responses = [
                 f"**{result}**, I choose you!",
                 f"I have selected **{result}**.",
@@ -395,29 +397,29 @@ class BookClubBot(commands.Bot):
                 description=random.choice(responses),
                 color=self.colors["fun"]
             )
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent choose command response.")
 
-        @self.command()
-        async def rolldice(ctx: commands.Context):
+        @self.tree.command(name="rolldice", description="I will roll a six-sided die")
+        async def rolldice(interaction: discord.Interaction):
             result = random.randint(1, 6)
             embed = discord.Embed(
                 title="🎲 Dice Roll",
                 description=f"You rolled a **{result}**!",
                 color=self.colors["fun"]
             )
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent rolldice command response.")
 
-        @self.command()
-        async def flipcoin(ctx: commands.Context):
+        @self.tree.command(name="flipcoin", description="Flip a coin")
+        async def flipcoin(interaction: discord.Interaction):
             result = random.choice(["HEADS", "TAILS"])
             embed = discord.Embed(
                 title="🪙 Coin Flip",
                 description=f"You got **{result}**!",
                 color=self.colors["fun"]
             )
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             print("Sent flipcoin command response.")
 
 def main():
