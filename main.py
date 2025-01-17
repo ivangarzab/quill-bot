@@ -18,7 +18,7 @@ class BookClubBot(commands.Bot):
     def __init__(self):
         print("~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
         intents = discord.Intents.all()
-        super().__init__(command_prefix='!', intents=intents)
+        super().__init__(command_prefix='~', intents=intents)
 
         # load_dotenv(override=True)
         
@@ -45,7 +45,8 @@ class BookClubBot(commands.Bot):
             "purp": Color.purple(),
             "royal": Color.gold(),
             "misc": Color.teal(),
-            "blank": Color.dark_grey()
+            "blank": Color.dark_grey(),
+            "admin": Color.dark_red()
         }
         
         # Message templates
@@ -213,7 +214,11 @@ class BookClubBot(commands.Bot):
         })
 
     def setup_commands(self):
-        print("Setting up slash commands...")
+        print("Setting up all commands...")
+        
+        ###################
+        # GENERAL COMMANDS (Slash Commands)
+        ###################
         
         @self.tree.command(name="usage", description="Show all available commands")
         async def usage(interaction: discord.Interaction):
@@ -236,7 +241,7 @@ class BookClubBot(commands.Bot):
                 name="🎲 Fun Commands",
                 value="• `/rolldice` - Roll a six-sided die\n"
                       "• `/flipcoin` - Flip a coin\n"
-                      "• `/choose` - Choose from given options",
+                      "• `/choose <options>` - Choose from given options",
                 inline=False
             )
             
@@ -420,6 +425,45 @@ class BookClubBot(commands.Bot):
             )
             await interaction.response.send_message(embed=embed)
             print("Sent flipcoin command response.")
+
+        ###################
+        # ADMIN COMMANDS (Slash Commands)
+        ###################
+
+        @self.tree.command(name="admin", description="Declare yourself an admin")
+        @app_commands.checks.has_permissions(administrator=True)
+        @app_commands.default_permissions(administrator=True)
+        async def admin(interaction: discord.Interaction):
+            """Access admin mode (Admin only)"""
+            print(f"Admin command received from {interaction.user}")
+            embed = discord.Embed(
+                title="⛔️ ADMIN MODE ⛔️",
+                description=f"Welcome to admin mode, {interaction.user.mention}",
+                color=self.colors["admin"]
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        ###################
+        # ERROR HANDLING
+        ###################
+
+        @admin.error
+        async def admin_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+            print(f"Got an command error: {error}")
+            if isinstance(error, app_commands.errors.MissingPermissions):
+                embed = discord.Embed(
+                    title="❌ Access Denied",
+                    description="You don't have permission to use this command",
+                    color=self.colors["error"]
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+            else:  # Added general error handling
+                embed = discord.Embed(
+                    title="❌ Error",
+                    description=f"An error occurred: {str(error)}",
+                    color=self.colors["error"]
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
 
 def main():
     print("~~~~~~~~~~~~ Starting BookClubBot... ~~~~~~~~~~~~")
