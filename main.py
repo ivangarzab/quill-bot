@@ -13,6 +13,7 @@ from typing import List, Optional
 # from dotenv import load_dotenv
 from database import Database
 import json
+import uuid
 
 class BookClubBot(commands.Bot):
     def __init__(self):
@@ -216,9 +217,9 @@ class BookClubBot(commands.Bot):
     def setup_commands(self):
         print("Setting up all commands...")
         
-        ###################
-        # GENERAL COMMANDS (Slash Commands)
-        ###################
+        ######################################
+        # GENERAL COMMANDS
+        ######################################
         
         @self.tree.command(name="usage", description="Show all available commands")
         async def usage(interaction: discord.Interaction):
@@ -426,12 +427,11 @@ class BookClubBot(commands.Bot):
             await interaction.response.send_message(embed=embed)
             print("Sent flipcoin command response.")
 
-        ###################
-        # ADMIN COMMANDS (Slash Commands)
-        ###################
+        ######################################
+        # ADMIN COMMANDS
+        ######################################
 
-        @self.tree.command(name="admin", description="Declare yourself an admin")
-        @app_commands.checks.has_permissions(administrator=True)
+        @self.tree.command(name="admin", description="(Admin only) Announce yourself as an admin")
         @app_commands.default_permissions(administrator=True)
         async def admin(interaction: discord.Interaction):
             """Access admin mode (Admin only)"""
@@ -443,11 +443,31 @@ class BookClubBot(commands.Bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        ###################
+        @self.tree.command(name="create_club", description="(Admin only) Create a new Club")
+        @app_commands.default_permissions(administrator=True)
+        async def create_club(interaction: discord.Interaction, club_name: str):
+            """(Admin only) Create a new Club"""
+            print(f"Admin command 'create_club' received from {interaction.user}")
+            club_id = uuid.uuid4()
+            # self.db.save_club({
+            #     "id": club_id,
+            #     "name": club_name,
+            #     "members": []
+            # })
+            embed = discord.Embed(
+                title="⛔️ ADMIN MODE ⛔️",
+                description=f"Club '{club_name}' was created successfully with ID:\n`{club_id}`",
+                color=self.colors["admin"]
+            )
+            embed.set_footer(text="Use this ID to manage the club.")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        ######################################
         # ERROR HANDLING
-        ###################
+        ######################################
 
         @admin.error
+        @create_club.error
         async def admin_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
             print(f"Got an command error: {error}")
             if isinstance(error, app_commands.errors.MissingPermissions):
@@ -457,7 +477,7 @@ class BookClubBot(commands.Bot):
                     color=self.colors["error"]
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-            else:  # Added general error handling
+            else:
                 embed = discord.Embed(
                     title="❌ Error",
                     description=f"An error occurred: {str(error)}",
