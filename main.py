@@ -215,6 +215,33 @@ class BookClubBot(commands.Bot):
     def setup_commands(self):
         print("Setting up slash commands...")
         
+        @self.tree.command(name="help", description="Show help prompt")
+        async def help(interaction: discord.Interaction):
+            embed = discord.Embed(
+                title="🦉 Quill's Orientation",
+                description="Greetings human!  I'm here to help you with all things about our book club.",
+                color=self.colors["info"]
+            )
+
+            embed.add_field(
+                name=" How to use ❓",
+                value="You can execute `/usage` to see all available commands.\n\nHere's a few more commands to get you started.",
+                inline=False
+            )
+
+            embed.add_field(
+                name="📖 Reading Commands",
+                value="• `/session` - Show all session details\n"
+                      "• `/book` - Show current book details\n"
+                      "• `/duedate` - Show the session's due date\n"
+                      "• `/discussions` - Show the session's discussion details",
+                inline=False
+            )
+
+            embed.set_footer(text=f"Hope this helps! ✌️")
+            await interaction.response.send_message(embed=embed)
+            print("Sent help command response.")
+        
         @self.tree.command(name="usage", description="Show all available commands")
         async def usage(interaction: discord.Interaction):
             embed = discord.Embed(
@@ -247,7 +274,7 @@ class BookClubBot(commands.Bot):
                 inline=False
             )
             
-            embed.set_footer(text="*Use / to access all commands!*")
+            embed.set_footer(text=f"*Use / to access all commands!*")
             await interaction.response.send_message(embed=embed)
             print("Sent usage command response.")
 
