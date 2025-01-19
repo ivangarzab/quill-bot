@@ -456,10 +456,40 @@ class BookClubBot(commands.Bot):
             # })
             embed = discord.Embed(
                 title="⛔️ ADMIN MODE ⛔️",
-                description=f"Club '{club_name}' was created successfully with ID:\n`{club_id}`",
+                description=f"Club '{club_name}' was created successfully with ID:\n\n`{club_id}`\n\nUse this ID to manage the club.",
                 color=self.colors["admin"]
             )
-            embed.set_footer(text="Use this ID to manage the club.")
+            embed.set_footer(text="Type `/club` to view the club details.")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        @self.tree.command(name="create_session", description="(Admin only) Create a new Session for a given Club")
+        @app_commands.default_permissions(administrator=True)
+        async def create_session(interaction: discord.Interaction, club_id: str, due_date: str, book_title: str, book_author: str):
+            """(Admin only) Create a new Session for a given Club"""
+            print(f"Admin command 'create_session' received from {interaction.user}")
+            session_id = uuid.uuid4()
+            # self.db.add_session(club_id, session_id, session_name)
+            embed = discord.Embed(
+                title="⛔️ ADMIN MODE ⛔️",
+                description=f"Session was created successfully with ID:\n\n`{session_id}`\n\nUse this ID to manage the session.",
+                color=self.colors["admin"]
+            )
+            embed.set_footer(text="Type `/session` to view the session details.")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        @self.tree.command(name="end_session", description="(Admin only) End the active Session, if there is one")
+        @app_commands.default_permissions(administrator=True)
+        async def end_session(interaction: discord.Interaction, session_id: str):
+            """(Admin only) End the active Session"""
+            print(f"Admin command 'create_session' received from {interaction.user}")
+            session_id = uuid.uuid4()
+            # self.db.end_session(club_id, session_id)
+            embed = discord.Embed(
+                title="⛔️ ADMIN MODE ⛔️",
+                description=f"Session with id `{session_id} was ended.",
+                color=self.colors["admin"]
+            )
+            embed.set_footer(text="Type `/session` to view the session details.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         ######################################
@@ -468,6 +498,7 @@ class BookClubBot(commands.Bot):
 
         @admin.error
         @create_club.error
+        @create_session.error
         async def admin_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
             print(f"Got an command error: {error}")
             if isinstance(error, app_commands.errors.MissingPermissions):
