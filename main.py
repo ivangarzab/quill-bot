@@ -424,6 +424,18 @@ class BookClubBot(commands.Bot):
             await interaction.response.send_message(embed=embed)
             print("Sent flipcoin command response.")
 
+        @self.tree.command(name="book_summary", description="Let me provide a summary of the active book")
+        async def booksummary(interaction: discord.Interaction):
+            """Ask OpenAI for a summary of the active book."""
+            response = await self.get_openai_response(f"What is {self.club['activeSession']['book']['title']} about?")
+            embed = discord.Embed(
+                title="🤖 Book Summary",
+                description=response,
+                color=self.colors["info"]
+            )
+            await interaction.response.send_message(embed=embed)
+            print("Sent flipcoin command response.")
+
         @self.command()
         async def robot(ctx: commands.Context, *, prompt: str):
             """Make prompt to OpenAI."""
