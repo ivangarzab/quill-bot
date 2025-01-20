@@ -1,4 +1,5 @@
 import os
+import json
 import random
 import discord
 from discord import app_commands, Color
@@ -8,11 +9,10 @@ from datetime import datetime, timedelta
 import pytz
 import calendar
 import requests
-import openai
 from typing import List, Optional
 # from dotenv import load_dotenv
 from database import Database
-import json
+from airobot import OpenAIClient
 
 class BookClubBot(commands.Bot):
     def __init__(self):
@@ -34,6 +34,9 @@ class BookClubBot(commands.Bot):
         # Initialize database
         self.db = Database()
         self.load_session_details()
+
+        # Initialize OpenAI client
+        self.openai = OpenAIClient(self.KEY_OPENAI)
         
         # Color schemes for different embed types
         self.colors = {
@@ -100,23 +103,6 @@ class BookClubBot(commands.Bot):
         except Exception as e:
             print(f"Error fetching weather: {str(e)}")
             return f"Error fetching weather: {str(e)}"
-            
-    async def get_openai_response(self, prompt: str) -> str:
-        """Get response from OpenAI API."""
-        print(f"Fetching OpenAI response for prompt: {prompt}")
-        try:
-            openai.api_key = self.KEY_OPENAI
-            response = openai.Completion.create(
-                engine="gpt-3.5-turbo-0125",
-                prompt=prompt,
-                max_tokens=150
-            )
-            result = response.choices[0].text
-            print(f"OpenAI response fetched successfully: {result}")
-            return result
-        except Exception as e:
-            print(f"Error generating response: {str(e)}")
-            return f"Error generating response: {str(e)}"
 
     @tasks.loop(hours=1)
     async def send_reminder_message(self):
@@ -174,16 +160,6 @@ class BookClubBot(commands.Bot):
         # Handle keywords
         if 'together' in msg_content:
             await message.channel.send('Reading is done best in community.')
-        # Half-command meant to reach ChatGTP
-        elif 'question:' in msg_content:
-            prompt = msg_content.split(':', 1)[1]
-            response = await self.get_openai_response(prompt)
-            embed = discord.Embed(
-                title="🤔 Question Response",
-                description=response,
-                color=self.colors["blank"]
-            )
-            await message.channel.send(embed=embed)
             
         # Random reactions
         if not message.content.startswith('!') and random.random() < 0.3:
@@ -447,6 +423,47 @@ class BookClubBot(commands.Bot):
             )
             await interaction.response.send_message(embed=embed)
             print("Sent flipcoin command response.")
+
+        @self.tree.command(name="book_summary", description="Let me provide a summary of the active book")
+        async def booksummary(interaction: discord.Interaction):
+            """Ask OpenAI for a summary of the active book."""
+            response = await self.get_openai_response(f"What is {self.club['activeSession']['book']['title']} about?")
+            embed = discord.Embed(
+                title="🤖 Book Summary",
+                description=response,
+                color=self.colors["info"]
+            )
+            await interaction.response.send_message(embed=embed)
+            print("Sent flipcoin command response.")
+
+        @self.command()
+        async def robot(ctx: commands.Context, *, prompt: str):
+            """Make prompt to OpenAI."""
+            response = await self.get_openai_response(prompt)
+            embed = discord.Embed(
+                title="🤖 Robot Response",
+                description=response,
+                color=self.colors["blank"]
+            )
+            await ctx.send(embed=embed)
+
+    async def get_openai_response(self, prompt: str) -> str:
+        """Get response from OpenAI API."""
+        print(f"Fetching OpenAI response for prompt: {prompt}")
+        try:
+            messages = [
+                {"role": "user", "content": f"{prompt}"}
+            ]
+            response = self.openai.create_chat_completion(messages)
+            if response:
+                print("GPT-3.5 Response:", response)
+            else:
+                print("Failed to get response after all retries")
+            return response
+        except ValueError as e:
+            print(f"Configuration error: {str(e)}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {str(e)}")
 
 def main():
     print("~~~~~~~~~~~~ Starting BookClubBot... ~~~~~~~~~~~~")
