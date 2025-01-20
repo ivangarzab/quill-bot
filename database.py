@@ -4,26 +4,30 @@ import json
 class Database:
     def __init__(self, db_name="bookclub.db"):
         try:
-            # Initialize a connection to the SQLite database
             self.connection = sqlite3.connect(db_name)
-            self.create_tables()  # Create necessary tables
+            self.create_tables()
         except sqlite3.Error as e:
             print(f"Error connecting to database: {e}")
 
     def create_tables(self):
         try:
-            # Create tables for the schema if they don't already exist
             with self.connection:
                 # Create 'Clubs' table
                 self.connection.execute("""
                     CREATE TABLE IF NOT EXISTS Clubs (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
-                        defaultChannel INTEGER
+                        default_channel INTEGER,
+                        guild_id TEXT UNIQUE
                     );
                 """)
+                
+                # Index for guild_id lookups
+                self.connection.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_guild_id 
+                    ON Clubs(guild_id);
+                """)
 
-                # Create 'Members' table
                 self.connection.execute("""
                     CREATE TABLE IF NOT EXISTS Members (
                         id INTEGER PRIMARY KEY,
@@ -36,11 +40,11 @@ class Database:
                 # Create 'MemberClubs' table
                 self.connection.execute("""
                     CREATE TABLE IF NOT EXISTS MemberClubs (
-                        memberId INTEGER,
-                        clubId TEXT,
-                        FOREIGN KEY(memberId) REFERENCES Members(id),
-                        FOREIGN KEY(clubId) REFERENCES Clubs(id),
-                        PRIMARY KEY (memberId, clubId)
+                        member_id INTEGER,
+                        club_id TEXT,
+                        FOREIGN KEY(member_id) REFERENCES Members(id),
+                        FOREIGN KEY(club_id) REFERENCES Clubs(id),
+                        PRIMARY KEY (member_id, club_id)
                     );
                 """)
 
@@ -94,10 +98,17 @@ class Database:
 
     def save_club(self, data):
         with self.connection:
-            # Insert club data
-            self.connection.execute("INSERT OR IGNORE INTO Clubs (id, name, defaultChannel) VALUES (?, ?, ?)", (data['id'], data['name'], data['defaultChannel']))
+            self.connection.execute("""
+                INSERT OR REPLACE INTO Clubs (id, name, default_channel, guild_id) 
+                VALUES (?, ?, ?, ?)
+            """, (
+                data['id'], 
+                data['name'], 
+                data['default_channel'],
+                data.get('discord_guild_id')  # Use get() in case it's not provided
+            ))
 
-            # Insert member data
+            # Rest of save_club remains the same
             for member in data['members']:
                 self.connection.execute("""
                     INSERT OR IGNORE INTO Members (id, name, points, numberOfBooksRead)
@@ -129,13 +140,97 @@ class Database:
                     VALUES (?, ?, ?, ?, ?)
                 """, (discussion['id'], session['id'], discussion['title'], discussion['date'], discussion['location']))
 
-    def update_club(self, club_id, name, defaultChannel):
+    def get_club_by_guild_id(self, guild_id):
+        """Retrieve a club using its Discord guild ID"""
+        with self.connection:
+            club = self.connection.execute("SELECT * FROM Clubs WHERE guild_id = ?", (guild_id,)).fetchone()
+            
+            if not club:
+                return None
+
+            # Fetch all members
+            members = self.connection.execute("""
+                SELECT m.* FROM Members m
+                JOIN MemberClubs mc ON m.id = mc.member_id
+                WHERE mc.club_id = ?
+            """, (club[0],)).fetchall()
+
+            # Transform member data
+            members_data = []
+            for member in members:
+                clubs = self.connection.execute(
+                    "SELECT club_id FROM MemberClubs WHERE member_id = ?", 
+                    (member[0],)
+                ).fetchall()
+                
+                members_data.append({
+                    "id": member[0],
+                    "name": member[1],
+                    "points": member[2],
+                    "clubs": [club_id[0] for club_id in clubs],
+                    "numberOfBooksRead": member[3]
+                })
+
+            # Fetch active session
+            session = self.connection.execute("""
+                SELECT * FROM Sessions WHERE club_id = ?
+                ORDER BY dueDate DESC LIMIT 1
+            """, (club[0],)).fetchone()
+
+            session_data = None
+            if session:
+                book = self.connection.execute(
+                    "SELECT * FROM Books WHERE id = ?", 
+                    (session[2],)
+                ).fetchone()
+                
+                discussions = self.connection.execute("""
+                    SELECT * FROM Discussions WHERE session_id = ?
+                    ORDER BY date ASC
+                """, (session[0],)).fetchall()
+
+                session_data = {
+                    "id": session[0],
+                    "club_id": session[1],
+                    "book": {
+                        "title": book[1],
+                        "author": book[2],
+                        "edition": book[3],
+                        "year": book[4],
+                        "ISBN": book[5]
+                    },
+                    "dueDate": session[3],
+                    "shameList": [],
+                    "discussions": [
+                        {
+                            "id": d[0],
+                            "session_id": d[1],
+                            "title": d[2],
+                            "date": d[3],
+                            "location": d[4]
+                        } for d in discussions
+                    ]
+                }
+
+            return {
+                "id": club[0],
+                "name": club[1],
+                "default_channel": club[2],
+                "discord_guild_id": club[3],
+                "members": members_data,
+                "activeSession": session_data,
+                "pastSessions": []
+            }
+
+    # Rest of the Database class methods remain the same...
+
+    def update_club(self, club_id, name, default_channel):
         """Update club details."""
         with self.connection:
             if name:
                 self.connection.execute("UPDATE Clubs SET name = ? WHERE id = ?", (name, club_id))
-            if defaultChannel:
-                self.connection.execute("UPDATE Clubs SET defaultChannel = ? WHERE id = ?", (defaultChannel, club_id))
+            if default_channel:
+                self.connection.execute("UPDATE Clubs SET default_channel = ? WHERE id = ?", (default_channel, club_id))
 
     def add_member(self, member_id, name, points, number_of_books_read, clubs):
         """Add a new member and associate them with clubs."""
@@ -262,6 +357,8 @@ class Database:
             session_data = {
                 "id": session[0],
                 "club_id": session[1],
+                "default_channel": club[2],
+                "discord_guild_id": club[3],
                 "book": {
                     "title": book[1],
                     "author": book[2],
@@ -278,7 +375,8 @@ class Database:
         return {
             "id": club[0],
             "name": club[1],
-            "defaultChannel": club[2],
+            "default_channel": club[2],
+            "discord_guild_id": club[3],
             "members": members_data,
             "activeSession": session_data,
             "pastSessions": []
@@ -293,7 +391,8 @@ if __name__ == "__main__":
     json_data = {
         "id": "0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3",
         "name": "Quill's Bookclub",
-        "defaultChannel": 1327357851827572872,
+        "default_channel": 1327357851827572872,
+        "discord_guild_id": "1039326367428395038",
         "members": [
             {
                 "id": 0,

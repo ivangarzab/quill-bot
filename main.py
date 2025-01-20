@@ -145,7 +145,7 @@ class BookClubBot(commands.Bot):
         if message.author == self.user:
             return
             
-        print(f"Received message: {message.content}\n\tfrom: {message.author}\n\tin: {message.channel}\n\tat: {message.guild}")
+        print(f"Received message: {message.content}\n\tfrom: {message.author}\n\tfor channel: {message.channel}\n\in guild: {message.guild} : {message.guild.id}")
         msg_content = message.content.lower()
         
         # Handle mentions
@@ -443,6 +443,20 @@ class BookClubBot(commands.Bot):
             embed = discord.Embed(
                 title="🤖 Robot Response",
                 description=response,
+                color=self.colors["blank"]
+            )
+            await ctx.send(embed=embed)
+
+        @self.command()
+        async def getClubFromDatabase(ctx: commands.Context):
+            """Attempt to get the Club data from the database using guild ID."""
+            guild_id = "1039326367428395038" #ctx.guild.id #"1327357845511082094"
+            print(f"Fetching Club data for guild ID: {guild_id}")
+            
+            data = self.db.get_club_by_guild_id(guild_id)
+            embed = discord.Embed(
+                title="Database by Guild ID",
+                description=f"```{json.dumps(data, indent=4)}```",
                 color=self.colors["blank"]
             )
             await ctx.send(embed=embed)
