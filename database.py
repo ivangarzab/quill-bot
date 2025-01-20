@@ -3,93 +3,99 @@ import json
 
 class Database:
     def __init__(self, db_name="bookclub.db"):
-        # Initialize a connection to the SQLite database
-        self.connection = sqlite3.connect(db_name)
-        self.create_tables()  # Create necessary tables
+        try:
+            # Initialize a connection to the SQLite database
+            self.connection = sqlite3.connect(db_name)
+            self.create_tables()  # Create necessary tables
+        except sqlite3.Error as e:
+            print(f"Error connecting to database: {e}")
 
     def create_tables(self):
-        # Create tables for the schema if they don't already exist
-        with self.connection:
-            # Create 'Clubs' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS Clubs (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL
-                );
-            """)
+        try:
+            # Create tables for the schema if they don't already exist
+            with self.connection:
+                # Create 'Clubs' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS Clubs (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        defaultChannel INTEGER
+                    );
+                """)
 
-            # Create 'Members' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS Members (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    points INTEGER DEFAULT 0,
-                    numberOfBooksRead INTEGER DEFAULT 0
-                );
-            """)
+                # Create 'Members' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS Members (
+                        id INTEGER PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        points INTEGER DEFAULT 0,
+                        numberOfBooksRead INTEGER DEFAULT 0
+                    );
+                """)
 
-            # Create 'MemberClubs' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS MemberClubs (
-                    member_id INTEGER,
-                    club_id TEXT,
-                    PRIMARY KEY (member_id, club_id),
-                    FOREIGN KEY (member_id) REFERENCES Members(id),
-                    FOREIGN KEY (club_id) REFERENCES Clubs(id)
-                );
-            """)
+                # Create 'MemberClubs' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS MemberClubs (
+                        memberId INTEGER,
+                        clubId TEXT,
+                        FOREIGN KEY(memberId) REFERENCES Members(id),
+                        FOREIGN KEY(clubId) REFERENCES Clubs(id),
+                        PRIMARY KEY (memberId, clubId)
+                    );
+                """)
 
-            # Create 'Sessions' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS Sessions (
-                    id TEXT PRIMARY KEY,
-                    club_id TEXT NOT NULL,
-                    book_id INTEGER,
-                    dueDate TEXT,
-                    defaultChannel INTEGER,
-                    FOREIGN KEY (club_id) REFERENCES Clubs(id)
-                );
-            """)
+                # Create 'Sessions' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS Sessions (
+                        id TEXT PRIMARY KEY,
+                        club_id TEXT NOT NULL,
+                        book_id INTEGER,
+                        dueDate TEXT,
+                        FOREIGN KEY (club_id) REFERENCES Clubs(id)
+                    );
+                """)
 
-            # Create 'Books' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS Books (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT NOT NULL,
-                    author TEXT NOT NULL,
-                    edition TEXT,
-                    year INTEGER,
-                    ISBN INTEGER
-                );
-            """)
+                # Create 'Books' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS Books (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        author TEXT NOT NULL,
+                        edition TEXT,
+                        year INTEGER,
+                        ISBN INTEGER
+                    );
+                """)
 
-            # Create 'Discussions' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS Discussions (
-                    id TEXT PRIMARY KEY,
-                    session_id TEXT NOT NULL,
-                    title TEXT NOT NULL,
-                    date TEXT NOT NULL,
-                    location TEXT,
-                    FOREIGN KEY (session_id) REFERENCES Sessions(id)
-                );
-            """)
+                # Create 'Discussions' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS Discussions (
+                        id TEXT PRIMARY KEY,
+                        session_id TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        date TEXT NOT NULL,
+                        location TEXT,
+                        FOREIGN KEY (session_id) REFERENCES Sessions(id)
+                    );
+                """)
 
-            # Create 'ShameList' table
-            self.connection.execute("""
-                CREATE TABLE IF NOT EXISTS ShameList (
-                    session_id TEXT,
-                    member_id INTEGER,
-                    PRIMARY KEY (session_id, member_id),
-                    FOREIGN KEY (session_id) REFERENCES Sessions(id),
-                    FOREIGN KEY (member_id) REFERENCES Members(id)
-                );
-            """)
+                # Create 'ShameList' table
+                self.connection.execute("""
+                    CREATE TABLE IF NOT EXISTS ShameList (
+                        session_id TEXT,
+                        member_id INTEGER,
+                        PRIMARY KEY (session_id, member_id),
+                        FOREIGN KEY (session_id) REFERENCES Sessions(id),
+                        FOREIGN KEY (member_id) REFERENCES Members(id)
+                    );
+                """)
+        except sqlite3.Error as e:
+            print(f"Error creating tables: {e}")
 
     def save_club(self, data):
         with self.connection:
             # Insert club data
-            self.connection.execute("INSERT OR IGNORE INTO Clubs (id, name) VALUES (?, ?)", (data['id'], data['name']))
+            self.connection.execute("INSERT OR IGNORE INTO Clubs (id, name, defaultChannel) VALUES (?, ?, ?)", (data['id'], data['name'], data['defaultChannel']))
 
             # Insert member data
             for member in data['members']:
@@ -112,9 +118,9 @@ class Database:
             # Insert session data
             session = data['activeSession']
             self.connection.execute("""
-                INSERT OR IGNORE INTO Sessions (id, club_id, book_id, dueDate, defaultChannel)
-                VALUES (?, ?, ?, ?, ?)
-            """, (session['id'], session['club_id'], book_id, session['dueDate'], session['defaultChannel']))
+                INSERT OR IGNORE INTO Sessions (id, club_id, book_id, dueDate)
+                VALUES (?, ?, ?, ?)
+            """, (session['id'], session['club_id'], book_id, session['dueDate']))
 
             # Insert discussion data
             for discussion in session['discussions']:
@@ -123,10 +129,13 @@ class Database:
                     VALUES (?, ?, ?, ?, ?)
                 """, (discussion['id'], session['id'], discussion['title'], discussion['date'], discussion['location']))
 
-    def update_club(self, club_id, name):
-        """Update the name of a club."""
+    def update_club(self, club_id, name, defaultChannel):
+        """Update club details."""
         with self.connection:
-            self.connection.execute("UPDATE Clubs SET name = ? WHERE id = ?", (name, club_id))
+            if name:
+                self.connection.execute("UPDATE Clubs SET name = ? WHERE id = ?", (name, club_id))
+            if defaultChannel:
+                self.connection.execute("UPDATE Clubs SET defaultChannel = ? WHERE id = ?", (defaultChannel, club_id))
 
     def add_member(self, member_id, name, points, number_of_books_read, clubs):
         """Add a new member and associate them with clubs."""
@@ -159,7 +168,6 @@ class Database:
                     "ISBN": book[5]
                 },
                 "dueDate": session[3],
-                "defaultChannel": session[4],
                 "discussions": [
                     {
                         "id": discussion[0],
@@ -175,7 +183,7 @@ class Database:
         with self.connection:
             self.connection.execute("INSERT OR IGNORE INTO ShameList (session_id, member_id) VALUES (?, ?)", (session_id, member_id))
 
-    def update_session(self, session_id, club_id=None, book_id=None, dueDate=None, defaultChannel=None):
+    def update_session(self, session_id, club_id=None, book_id=None, dueDate=None):
         """Update session details."""
         with self.connection:
             if club_id:
@@ -184,8 +192,6 @@ class Database:
                 self.connection.execute("UPDATE Sessions SET book_id = ? WHERE id = ?", (book_id, session_id))
             if dueDate:
                 self.connection.execute("UPDATE Sessions SET dueDate = ? WHERE id = ?", (dueDate, session_id))
-            if defaultChannel:
-                self.connection.execute("UPDATE Sessions SET defaultChannel = ? WHERE id = ?", (defaultChannel, session_id))
 
     def update_discussion(self, discussion_id, session_id=None, title=None, date=None, location=None):
         """Update discussion details."""
@@ -264,7 +270,6 @@ class Database:
                     "ISBN": book[5]
                 },
                 "dueDate": session[3],
-                "defaultChannel": session[4],
                 "shameList": [],
                 "discussions": session_discussions
             }
@@ -273,16 +278,22 @@ class Database:
         return {
             "id": club[0],
             "name": club[1],
+            "defaultChannel": club[2],
             "members": members_data,
             "activeSession": session_data,
             "pastSessions": []
         }
+
+    def close_connection(self):
+        if self.connection:
+            self.connection.close()
 
 if __name__ == "__main__":
     # JSON data provided by the user
     json_data = {
         "id": "0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3",
         "name": "Quill's Bookclub",
+        "defaultChannel": 1327357851827572872,
         "members": [
             {
                 "id": 0,
@@ -331,7 +342,6 @@ if __name__ == "__main__":
                 "ISBN": 0
             },
             "dueDate": "3/31/2025",
-            "defaultChannel": 1327357851827572872,
             "shameList": [],
             "discussions": [
                 {
