@@ -128,7 +128,7 @@ class BookClubBot(commands.Bot):
         sf_timezone = pytz.timezone('US/Pacific')
         now_pacific = datetime.now(tz=sf_timezone)
         
-        if now_pacific.hour == 17:
+        if now_pacific.hour == 17 and random.random() < 0.4:
             # if it is 5PM Pacific time
             channel = self.get_channel(self.DEFAULT_CHANNEL)
             if channel:
