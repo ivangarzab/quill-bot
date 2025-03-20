@@ -2,7 +2,7 @@ import sqlite3
 import json
 import os
 
-def export_sqlite_data(db_path="bookclub.db"):
+def export_sqlite_data(db_path="local_bookclub.db"):
     # Print current working directory
     print(f"Current working directory: {os.getcwd()}")
     print(f"Looking for database at: {os.path.abspath(db_path)}")

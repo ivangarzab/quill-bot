@@ -2,7 +2,7 @@ import sqlite3
 import json
 
 class Database:
-    def __init__(self, db_name="bookclub.db"):
+    def __init__(self, db_name="local_bookclub.db"):
         # Initialize a connection to the SQLite database
         self.connection = sqlite3.connect(db_name)
         self.create_tables()  # Create necessary tables
