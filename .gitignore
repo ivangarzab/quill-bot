@@ -1,5 +1,4 @@
 .env
 .venv
-.idx
 .DS_Store
 *.egg-info
