@@ -24,7 +24,14 @@ class BookClubBot(commands.Bot):
         
         # Configuration
         self.DEFAULT_CHANNEL = 1327357851827572872
-        self.TOKEN = os.getenv("TOKEN")
+
+        self.ENV = os.getenv("ENV")
+        if self.ENV == "dev":
+            print("~~~~~~~~~~~~ Running in development mode ~~~~~~~~~~~~")
+            self.TOKEN = os.getenv("DEV_TOKEN")
+        else:
+            self.TOKEN = os.getenv("TOKEN")
+        
         print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
         self.KEY_WEATHER = os.getenv("KEY_WEATHER")
         print(f"[DEBUG] KEY_WEATHER: {'SET' if self.KEY_WEATHER else 'NOT SET'}")

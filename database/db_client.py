@@ -9,8 +9,13 @@ load_dotenv()
 class Database:
     def __init__(self):
         # Initialize connection to Supabase
-        supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_KEY")
+        self.ENV = os.getenv("ENV")
+        if self.ENV == "dev":
+            supabase_url = os.getenv("DEV_SUPABASE_URL")
+            supabase_key = os.getenv("DEV_SUPABASE_KEY")
+        else:
+            supabase_url = os.getenv("SUPABASE_URL")
+            supabase_key = os.getenv("SUPABASE_KEY")
         
         if not supabase_url or not supabase_key:
             raise ValueError("Missing Supabase credentials in .env file")
