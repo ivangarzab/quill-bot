@@ -186,6 +186,7 @@ class Database:
         if update_data:
             self.supabase.table("members").update(update_data).eq("id", member_id).execute()
 
+    # TODO: Stop fetching the first club, and instead fetch the club with the given ID
     def get_club(self):
         # Get club data
         club_response = self.supabase.table("clubs").select("*").execute()
