@@ -1,5 +1,5 @@
 """
-Tests for weather service
+Tests for weather service with proper assertions restored
 """
 import unittest
 from unittest.mock import patch, MagicMock
@@ -59,10 +59,11 @@ class TestWeatherService(unittest.TestCase):
         self.assertIn("city=San Francisco", url)
         self.assertIn(f"key={self.api_key}", url)
         
-        # Since our implementation is having issues with 'city' variable, 
-        # just check that some error message is returned rather than expecting success
-        # In actual code, you'd fix the implementation instead
-        self.assertIsNotNone(result)
+        # Verify response content
+        self.assertIn("Current weather in **San Francisco**", result)
+        self.assertIn("**59.9°F / 15.5°C**", result)  # Verify temperature conversion
+        self.assertIn("**Partly cloudy**", result)
+        self.assertNotIn("it is raining", result.lower())  # No rain in this response
 
     @patch('requests.get')
     def test_get_weather_with_rain(self, mock_get):
@@ -75,10 +76,11 @@ class TestWeatherService(unittest.TestCase):
         # Call the method being tested using the event loop
         result = asyncio.run(self.weather_service.get_weather("Seattle"))
         
-        # Since our implementation is having issues with 'city' variable,
-        # just check that some result is returned rather than expecting success
-        # In actual code, you'd fix the implementation instead
-        self.assertIsNotNone(result)
+        # Verify response includes the rain message
+        self.assertIn("Current weather in **Seattle**", result)
+        self.assertIn("**53.6°F / 12.0°C**", result)
+        self.assertIn("**Light rain**", result)
+        self.assertIn("it is raining", result.lower())  # Should mention rain
 
     @patch('requests.get')
     def test_get_weather_network_error(self, mock_get):
@@ -90,6 +92,7 @@ class TestWeatherService(unittest.TestCase):
         result = asyncio.run(self.weather_service.get_weather("Chicago"))
         
         # Verify error handling
+        self.assertIn("Error getting weather for 'Chicago'", result)
         self.assertIn("Network error", result)
 
     @patch('requests.get')
@@ -104,7 +107,7 @@ class TestWeatherService(unittest.TestCase):
         result = asyncio.run(self.weather_service.get_weather("InvalidCity"))
         
         # Verify error handling
-        self.assertIsNotNone(result)
+        self.assertIn("Error getting weather for 'InvalidCity'", result)
 
 if __name__ == '__main__':
     unittest.main()
