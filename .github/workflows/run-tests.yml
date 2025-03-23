@@ -28,6 +28,6 @@ jobs:
         python tests/run_tests.py
       env:
         ENV: "dev"
-        DEV_TOKEN: "test_token"
-        KEY_WEATHER: "test_weather_key"
-        KEY_OPEN_AI: "test_openai_key"
+        DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
+        KEY_WEATHER: ${{ secrets.KEY_WEATHER }}
+        KEY_OPEN_AI: ${{ secrets.KEY_OPEN_AI }}
