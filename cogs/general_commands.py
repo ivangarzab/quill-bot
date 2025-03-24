@@ -61,7 +61,7 @@ def setup_general_commands(bot):
             name="🎲 Fun Commands",
             value="• `/rolldice` - Roll a six-sided die\n"
                   "• `/flipcoin` - Flip a coin\n"
-                  "• `/choose` - Choose from given options",
+                  "• `/choose <options>` - Choose from given options",
             inline=False
         )
         

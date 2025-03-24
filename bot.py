@@ -17,9 +17,9 @@ from events.message_handler import setup_message_handlers
 from utils.schedulers import setup_scheduled_tasks
 
 class BookClubBot(commands.Bot):
-    """Main bot class, significantly simplified from the original monolithic design"""
+    """Main bot class"""
     def __init__(self):
-        print("~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
+        print("[DEBUG] ~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
         intents = discord.Intents.all()
         super().__init__(command_prefix='!', intents=intents)
 
@@ -44,7 +44,7 @@ class BookClubBot(commands.Bot):
         setup_message_handlers(self)
         
     def load_session_details(self):
-        """Load session details from the database."""
+        """Load session details from the database"""
         self.club = self.db.get_club()
 
     async def setup_hook(self):
@@ -60,7 +60,7 @@ class BookClubBot(commands.Bot):
         await self.wait_until_ready()
         for guild in self.guilds:
             nickname = guild.me.nick or guild.me.name
-            print(f"~~~~~~~~~~~~ Instance initialized as '{nickname}' ~~~~~~~~~~~~\nwith metadata: \n{json.dumps(self.club, separators=(',', ':'))}")
+            print(f"[DEBUG] ~~~~~~~~~~~~ Instance initialized as '{nickname}' ~~~~~~~~~~~~\nwith metadata: \n{json.dumps(self.club, separators=(',', ':'))}")
 
     def load_cogs(self):
         """Load all command cogs"""
@@ -75,7 +75,7 @@ class BookClubBot(commands.Bot):
         setup_fun_commands(self)
         setup_utility_commands(self)
         
-        print("All commands loaded.")
+        print("All commands loaded")
 
     def setup_logging(self):
         """Set up logging with daily rotation"""
