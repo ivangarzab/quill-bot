@@ -10,7 +10,7 @@ from datetime import datetime
 from discord.ext import commands
 
 from config import BotConfig
-from database import Database
+from api import BookClubAPI
 from services.openai_service import OpenAIService
 from utils.constants import DEFAULT_CHANNEL
 from events.message_handler import setup_message_handlers
@@ -31,7 +31,7 @@ class BookClubBot(commands.Bot):
         self.config = BotConfig()
         
         # Initialize services
-        self.db = Database()
+        self.api = BookClubAPI(self.config.SUPABASE_URL, self.config.SUPABASE_KEY)
         self.openai_service = OpenAIService(self.config.KEY_OPENAI)
         
         # Load club data
@@ -45,7 +45,9 @@ class BookClubBot(commands.Bot):
         
     def load_session_details(self):
         """Load session details from the database"""
-        self.club = self.db.get_club()
+        # TODO: [WARNING] Hardcoded club ID for single club usage, in the meantime
+        # self.club = self.api.get_club("0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3")
+        self.club = self.api.get_club("club-1")
 
     async def setup_hook(self):
         """Setup hook called when bot is being prepared to connect"""

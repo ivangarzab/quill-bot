@@ -7,7 +7,6 @@ from bot import BookClubBot
 
 def main():
     """Main function to start the bot"""
-    print("~~~~~~~~~~~~ Starting BookClubBot... ~~~~~~~~~~~~")
     bot = BookClubBot()
     bot.run(bot.config.TOKEN)
 
