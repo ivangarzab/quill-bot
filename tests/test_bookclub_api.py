@@ -3,10 +3,11 @@ from unittest.mock import patch, Mock
 import json
 import os
 import sys
+import requests
 
 # Add parent directory to path to import the BookClubAPI class
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from api.bookclub_api import BookClubAPI
+from api.bookclub_api import BookClubAPI, ResourceNotFoundError, ValidationError, AuthenticationError, APIError
 
 class TestBookClubAPI(unittest.TestCase):
     def setUp(self):
@@ -377,27 +378,85 @@ class TestBookClubAPI(unittest.TestCase):
 
     # Error handling tests
     @patch('requests.get')
-    def test_error_handling(self, mock_get):
-        """Test error handling."""
-        # Set up mock to raise an error
-        mock_get.side_effect = Exception("Test error")
+    def test_resource_not_found_error(self, mock_get):
+        """Test ResourceNotFoundError handling."""
+        # Set up mock to raise a 404 error
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_response.text = "Not found"
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "404 Client Error", response=mock_response
+        )
+        mock_get.return_value = mock_response
         
-        # Call the method and expect an exception
-        with self.assertRaises(Exception):
+        # Call the method and expect a ResourceNotFoundError
+        with self.assertRaises(ResourceNotFoundError):
+            self.api.get_club("non-existent-club")
+
+    @patch('requests.post')
+    def test_validation_error(self, mock_post):
+        """Test ValidationError handling."""
+        # Set up mock to raise a 400 error
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Invalid request"
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "400 Client Error", response=mock_response
+        )
+        mock_post.return_value = mock_response
+        
+        # Call the method and expect a ValidationError
+        with self.assertRaises(ValidationError):
+            self.api.create_club({"invalid": "data"})
+
+    @patch('requests.get')
+    def test_authentication_error(self, mock_get):
+        """Test AuthenticationError handling."""
+        # Set up mock to raise a 401 error
+        mock_response = Mock()
+        mock_response.status_code = 401
+        mock_response.text = "Unauthorized"
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "401 Client Error", response=mock_response
+        )
+        mock_get.return_value = mock_response
+        
+        # Call the method and expect an AuthenticationError
+        with self.assertRaises(AuthenticationError):
             self.api.get_club("club-1")
 
     @patch('requests.get')
-    def test_http_error_handling(self, mock_get):
-        """Test HTTP error handling."""
-        # Create a mock response that raises HTTPError on raise_for_status
-        from requests.exceptions import HTTPError
+    def test_connection_error(self, mock_get):
+        """Test connection error handling."""
+        # Set up mock to raise a ConnectionError
+        mock_get.side_effect = requests.exceptions.ConnectionError("Connection refused")
+        
+        # Call the method and expect an APIError
+        with self.assertRaises(APIError) as context:
+            self.api.get_club("club-1")
+        
+        # Verify the error message contains helpful information
+        self.assertIn("Connection error", str(context.exception))
+        self.assertIn("server is running", str(context.exception))
+
+    @patch('requests.get')
+    def test_general_api_error(self, mock_get):
+        """Test general API error handling."""
+        # Set up mock to raise a 500 error
         mock_response = Mock()
-        mock_response.raise_for_status.side_effect = HTTPError("404 Not Found")
+        mock_response.status_code = 500
+        mock_response.text = "Internal server error"
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "500 Server Error", response=mock_response
+        )
         mock_get.return_value = mock_response
         
-        # Call the method and expect an HTTPError
-        with self.assertRaises(HTTPError):
+        # Call the method and expect an APIError
+        with self.assertRaises(APIError) as context:
             self.api.get_club("club-1")
+        
+        # Verify the error message contains the status code
+        self.assertIn("500", str(context.exception))
 
 
 if __name__ == '__main__':
