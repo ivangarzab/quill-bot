@@ -5,6 +5,7 @@ import os
 import json
 import discord
 import logging
+import random
 from logging.handlers import TimedRotatingFileHandler
 from datetime import datetime
 from discord.ext import commands
@@ -12,9 +13,11 @@ from discord.ext import commands
 from config import BotConfig
 from api import BookClubAPI
 from services.openai_service import OpenAIService
-from utils.constants import DEFAULT_CHANNEL
+from utils.constants import DEFAULT_CHANNEL, GENERIC_ERRORS, RESOURCE_NOT_FOUND_MESSAGES, VALIDATION_MESSAGES, AUTH_MESSAGES, CONNECTION_MESSAGES
 from events.message_handler import setup_message_handlers
 from utils.schedulers import setup_scheduled_tasks
+
+from api.bookclub_api import ResourceNotFoundError, ValidationError, AuthenticationError, APIError
 
 class BookClubBot(commands.Bot):
     """Main bot class"""
@@ -45,9 +48,7 @@ class BookClubBot(commands.Bot):
         
     def load_session_details(self):
         """Load session details from the database"""
-        # TODO: [WARNING] Hardcoded club ID for single club usage, in the meantime
-        # self.club = self.api.get_club("0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3")
-        self.club = self.api.get_club("club-1")
+        self.club = self.api.get_club(self.config.DEFAULT_CLUB_ID)
 
     async def setup_hook(self):
         """Setup hook called when bot is being prepared to connect"""
@@ -115,17 +116,30 @@ class BookClubBot(commands.Bot):
         """Handle errors in application commands gracefully"""
         self.logger.error(f"Error in command {interaction.command.name if interaction.command else 'unknown'}: {error}")
         
+        # Select appropriate message based on error type
+        error_message = ""
+        if isinstance(error, ResourceNotFoundError):
+            error_message = random.choice(RESOURCE_NOT_FOUND_MESSAGES)
+        elif isinstance(error, ValidationError):
+            error_message = random.choice(VALIDATION_MESSAGES)
+        elif isinstance(error, AuthenticationError):
+            error_message = random.choice(AUTH_MESSAGES)
+        elif isinstance(error, APIError) and "Connection error" in str(error):
+            error_message = random.choice(CONNECTION_MESSAGES)
+        else:
+            error_message = random.choice(GENERIC_ERRORS)
+        
         try:
             # If response hasn't been sent yet
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    "Something went wrong with that command. Please try again later.",
+                    error_message,
                     ephemeral=True
                 )
             else:
                 # If response was already sent, use followup
                 await interaction.followup.send(
-                    "Something went wrong completing that command.",
+                    error_message,
                     ephemeral=True
                 )
         except Exception as e:
