@@ -5,21 +5,24 @@ import os
 import json
 import discord
 import logging
+import random
 from logging.handlers import TimedRotatingFileHandler
 from datetime import datetime
 from discord.ext import commands
 
 from config import BotConfig
-from database import Database
+from api import BookClubAPI
 from services.openai_service import OpenAIService
-from utils.constants import DEFAULT_CHANNEL
+from utils.constants import DEFAULT_CHANNEL, GENERIC_ERRORS, RESOURCE_NOT_FOUND_MESSAGES, VALIDATION_MESSAGES, AUTH_MESSAGES, CONNECTION_MESSAGES
 from events.message_handler import setup_message_handlers
 from utils.schedulers import setup_scheduled_tasks
 
+from api.bookclub_api import ResourceNotFoundError, ValidationError, AuthenticationError, APIError
+
 class BookClubBot(commands.Bot):
-    """Main bot class, significantly simplified from the original monolithic design"""
+    """Main bot class"""
     def __init__(self):
-        print("~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
+        print("[DEBUG] ~~~~~~~~~~~~ Initializing BookClubBot... ~~~~~~~~~~~~")
         intents = discord.Intents.all()
         super().__init__(command_prefix='!', intents=intents)
 
@@ -31,7 +34,7 @@ class BookClubBot(commands.Bot):
         self.config = BotConfig()
         
         # Initialize services
-        self.db = Database()
+        self.api = BookClubAPI(self.config.SUPABASE_URL, self.config.SUPABASE_KEY)
         self.openai_service = OpenAIService(self.config.KEY_OPENAI)
         
         # Load club data
@@ -44,8 +47,8 @@ class BookClubBot(commands.Bot):
         setup_message_handlers(self)
         
     def load_session_details(self):
-        """Load session details from the database."""
-        self.club = self.db.get_club()
+        """Load session details from the database"""
+        self.club = self.api.get_club(self.config.DEFAULT_CLUB_ID)
 
     async def setup_hook(self):
         """Setup hook called when bot is being prepared to connect"""
@@ -60,7 +63,7 @@ class BookClubBot(commands.Bot):
         await self.wait_until_ready()
         for guild in self.guilds:
             nickname = guild.me.nick or guild.me.name
-            print(f"~~~~~~~~~~~~ Instance initialized as '{nickname}' ~~~~~~~~~~~~\nwith metadata: \n{json.dumps(self.club, separators=(',', ':'))}")
+            print(f"[DEBUG] ~~~~~~~~~~~~ Instance initialized as '{nickname}' ~~~~~~~~~~~~\nwith metadata: \n{json.dumps(self.club, separators=(',', ':'))}")
 
     def load_cogs(self):
         """Load all command cogs"""
@@ -75,7 +78,7 @@ class BookClubBot(commands.Bot):
         setup_fun_commands(self)
         setup_utility_commands(self)
         
-        print("All commands loaded.")
+        print("All commands loaded")
 
     def setup_logging(self):
         """Set up logging with daily rotation"""
@@ -113,17 +116,30 @@ class BookClubBot(commands.Bot):
         """Handle errors in application commands gracefully"""
         self.logger.error(f"Error in command {interaction.command.name if interaction.command else 'unknown'}: {error}")
         
+        # Select appropriate message based on error type
+        error_message = ""
+        if isinstance(error, ResourceNotFoundError):
+            error_message = random.choice(RESOURCE_NOT_FOUND_MESSAGES)
+        elif isinstance(error, ValidationError):
+            error_message = random.choice(VALIDATION_MESSAGES)
+        elif isinstance(error, AuthenticationError):
+            error_message = random.choice(AUTH_MESSAGES)
+        elif isinstance(error, APIError) and "Connection error" in str(error):
+            error_message = random.choice(CONNECTION_MESSAGES)
+        else:
+            error_message = random.choice(GENERIC_ERRORS)
+        
         try:
             # If response hasn't been sent yet
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    "Something went wrong with that command. Please try again later.",
+                    error_message,
                     ephemeral=True
                 )
             else:
                 # If response was already sent, use followup
                 await interaction.followup.send(
-                    "Something went wrong completing that command.",
+                    error_message,
                     ephemeral=True
                 )
         except Exception as e:

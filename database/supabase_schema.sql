@@ -1,14 +1,15 @@
 -- Create tables for your book club database
 CREATE TABLE IF NOT EXISTS Clubs (
     id TEXT PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    discord_channel BIGINT,
 );
 
 CREATE TABLE IF NOT EXISTS Members (
-    id INTEGER PRIMARY KEY,  -- Keeping as INTEGER to match your existing data
+    id INTEGER PRIMARY KEY, -- TODO: Make into serial
     name TEXT NOT NULL,
     points INTEGER DEFAULT 0,
-    numberOfBooksRead INTEGER DEFAULT 0
+    books_read INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS MemberClubs (
@@ -20,20 +21,19 @@ CREATE TABLE IF NOT EXISTS MemberClubs (
 );
 
 CREATE TABLE IF NOT EXISTS Books (
-    id SERIAL PRIMARY KEY,  -- Changed to SERIAL for PostgreSQL
+    id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     author TEXT NOT NULL,
     edition TEXT,
     year INTEGER,
-    ISBN TEXT  -- Changed to TEXT as ISBNs can have hyphens and leading zeros
+    ISBN TEXT
 );
 
 CREATE TABLE IF NOT EXISTS Sessions (
     id TEXT PRIMARY KEY,
     club_id TEXT NOT NULL,
     book_id INTEGER,
-    dueDate TEXT,  -- Keeping as TEXT to match your existing data
-    defaultChannel BIGINT,  -- Changed to BIGINT for Discord channel IDs
+    due_date Date,
     FOREIGN KEY (club_id) REFERENCES Clubs(id),
     FOREIGN KEY (book_id) REFERENCES Books(id)
 );
@@ -42,15 +42,15 @@ CREATE TABLE IF NOT EXISTS Discussions (
     id TEXT PRIMARY KEY,
     session_id TEXT NOT NULL,
     title TEXT NOT NULL,
-    date TEXT NOT NULL,  -- Keeping as TEXT to match your existing data
+    date Date NOT NULL,
     location TEXT,
     FOREIGN KEY (session_id) REFERENCES Sessions(id)
 );
 
 CREATE TABLE IF NOT EXISTS ShameList (
-    session_id TEXT,
+    club_id TEXT,
     member_id INTEGER,
-    PRIMARY KEY (session_id, member_id),
-    FOREIGN KEY (session_id) REFERENCES Sessions(id),
+    PRIMARY KEY (club_id, member_id),
+    FOREIGN KEY (club_id) REFERENCES Sessions(id),
     FOREIGN KEY (member_id) REFERENCES Members(id)
 );

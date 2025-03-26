@@ -63,3 +63,38 @@ READING_REMINDERS = [
     'Reading is self-care. ☯️ Take some time for yourself today!',
     'Every page you read brings you closer to your goal. 🎯'
 ]
+
+# Funny error messages with emojis
+GENERIC_ERRORS = [
+        "📚 Oops! I dropped my books! Give me a moment to pick them up...",
+        "🤔 I seem to have lost my page. Can we try that again?",
+        "😅 Even book clubs have technical difficulties sometimes!",
+        "🙃 The bookmark fell out! Let's try again, shall we?",
+        "🦉 Hoot! Something went wrong with my literary wisdom.",
+        "📖 I need to re-read that chapter. Can you try again later?"
+]
+    
+# More specific error messages
+RESOURCE_NOT_FOUND_MESSAGES = [
+    "🔍 I couldn't find that in my library! Does it exist?",
+    "📚 That book seems to be checked out from my collection.",
+    "🧐 I've searched all the shelves but couldn't find what you're looking for."
+]
+
+VALIDATION_MESSAGES = [
+    "✏️ There seems to be a typo in your request.",
+    "📝 The details don't look quite right. Could you check them?",
+    "🔤 I think we're missing some important information here."
+]
+
+AUTH_MESSAGES = [
+    "🔐 I need proper permission to access that section of the library.",
+    "🚫 The library card for that resource has expired.",
+    "👮 The librarian says I don't have access to that shelf."
+]
+
+CONNECTION_MESSAGES = [
+    "📡 I seem to have lost my connection to the book database.",
+    "🌐 The library network is down. Can we try again later?",
+    "🔌 I got disconnected from the literary mainframe!"
+]

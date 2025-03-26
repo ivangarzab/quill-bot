@@ -18,7 +18,7 @@ class Database:
             supabase_key = os.getenv("SUPABASE_KEY")
         
         if not supabase_url or not supabase_key:
-            raise ValueError("Missing Supabase credentials in .env file")
+            raise ValueError("[ERROR] Missing Supabase credentials in .env file")
             
         self.supabase = create_client(supabase_url, supabase_key)
     
