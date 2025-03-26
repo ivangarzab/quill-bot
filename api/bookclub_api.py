@@ -111,7 +111,23 @@ class BookClubAPI:
         Create a new club with all its associated data.
         
         Args:
-            club_data: Dict containing club data including members and active session
+            club_data: Dict containing club data including name, discord_channel, members, etc.
+                Example:
+                {
+                    "name": "Classic Literature Club",
+                    "discord_channel": 123456789012345678,  # Optional
+                    "members": [  # Optional
+                        {"id": 1, "name": "John Doe"},
+                        {"id": 2, "name": "Jane Smith"}
+                    ],
+                    "active_session": {  # Optional
+                        "book": {
+                            "title": "To Kill a Mockingbird",
+                            "author": "Harper Lee"
+                        },
+                        "due_date": "2023-12-31"
+                    }
+                }
             
         Returns:
             Dict containing success status and message
@@ -130,13 +146,19 @@ class BookClubAPI:
         except requests.exceptions.RequestException as e:
             self._handle_request_error(e, "club")
     
-    def update_club(self, club_id: str, name: str) -> Dict:
+    def update_club(self, club_id: str, data: Dict) -> Dict:
         """
-        Update the name of a club.
+        Update a club.
         
         Args:
             club_id: The ID of the club to update
-            name: The new name for the club
+            data: Dict containing fields to update (name, discord_channel, shame_list)
+                Example:
+                {
+                    "name": "New Club Name",  # Optional
+                    "discord_channel": 987654321098765432,  # Optional
+                    "shame_list": [1, 2, 3]  # Optional - list of member IDs
+                }
             
         Returns:
             Dict containing success status and message
@@ -148,13 +170,10 @@ class BookClubAPI:
             APIError: For other API errors
         """
         url = f"{self.functions_url}/club"
-        data = {
-            "id": club_id,
-            "name": name
-        }
+        update_data = {"id": club_id, **data}
         
         try:
-            response = requests.put(url, headers=self.headers, json=data)
+            response = requests.put(url, headers=self.headers, json=update_data)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -194,7 +213,7 @@ class BookClubAPI:
             member_id: The ID of the member to retrieve
             
         Returns:
-            Dict containing member details
+            Dict containing member details including clubs and shame_clubs
             
         Raises:
             ResourceNotFoundError: If the member doesn't exist
@@ -216,7 +235,14 @@ class BookClubAPI:
         Create a new member.
         
         Args:
-            member_data: Dict containing member data including name, points, etc.
+            member_data: Dict containing member data
+                Example:
+                {
+                    "name": "John Doe",
+                    "points": 0,  # Optional
+                    "books_read": 0,  # Optional
+                    "clubs": ["club-id-1", "club-id-2"]  # Optional - list of club IDs
+                }
             
         Returns:
             Dict containing success status and message
@@ -241,7 +267,14 @@ class BookClubAPI:
         
         Args:
             member_id: The ID of the member to update
-            update_data: Dict containing fields to update (name, points, clubs, etc.)
+            update_data: Dict containing fields to update
+                Example:
+                {
+                    "name": "New Name",  # Optional
+                    "points": 10,  # Optional
+                    "books_read": 5,  # Optional
+                    "clubs": ["club-id-1", "club-id-3"]  # Optional - complete list of club IDs
+                }
             
         Returns:
             Dict containing success status and message
@@ -296,7 +329,7 @@ class BookClubAPI:
             session_id: The ID of the session to retrieve
             
         Returns:
-            Dict containing session details including book and discussions
+            Dict containing session details including book, club info, and discussions
             
         Raises:
             ResourceNotFoundError: If the session doesn't exist
@@ -319,6 +352,23 @@ class BookClubAPI:
         
         Args:
             session_data: Dict containing session data
+                Example:
+                {
+                    "club_id": "club-id-1",
+                    "book": {
+                        "title": "The Great Gatsby",
+                        "author": "F. Scott Fitzgerald",
+                        "year": 1925  # Optional
+                    },
+                    "due_date": "2023-11-30",  # Optional
+                    "discussions": [  # Optional
+                        {
+                            "title": "Chapters 1-3",
+                            "date": "2023-11-15",
+                            "location": "Library"  # Optional
+                        }
+                    ]
+                }
             
         Returns:
             Dict containing success status and message
@@ -344,6 +394,31 @@ class BookClubAPI:
         Args:
             session_id: The ID of the session to update
             update_data: Dict containing fields to update
+                Example:
+                {
+                    "book": {  # Optional
+                        "title": "Updated Title",
+                        "author": "Updated Author",
+                        "edition": "Second Edition",  # Optional
+                        "year": 1925,  # Optional
+                        "isbn": "978-3-16-148410-0"  # Optional
+                    },
+                    "due_date": "2023-12-15",  # Optional
+                    "discussions": [  # Optional - replaces all discussions
+                        {
+                            "id": "existing-discussion-id",  # Include for existing discussions
+                            "title": "Updated Discussion",
+                            "date": "2023-11-20",
+                            "location": "Library"  # Optional
+                        },
+                        {
+                            "title": "New Discussion",  # New discussion (no ID)
+                            "date": "2023-12-01",
+                            "location": "Online"  # Optional
+                        }
+                    ],
+                    "discussion_ids_to_delete": ["discussion-id-1"]  # Optional
+                }
             
         Returns:
             Dict containing success status and message
@@ -363,7 +438,7 @@ class BookClubAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             self._handle_request_error(e, "session", session_id)
-    
+
     def delete_session(self, session_id: str) -> Dict:
         """
         Delete a session.

@@ -19,13 +19,13 @@ class TestSessionCommands(unittest.TestCase):
         # Create mock club data
         self.bot.club = {
             'name': 'Test Book Club',
-            'activeSession': {
+            'active_session': {
                 'id': 'session-1',
                 'book': {
                     'title': 'Test Book Title',
                     'author': 'Test Author'
                 },
-                'dueDate': '2025-05-01',
+                'due_date': '2025-05-01',
                 'discussions': [
                     {
                         'id': 'discussion-1',

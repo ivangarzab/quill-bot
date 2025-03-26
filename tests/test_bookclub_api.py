@@ -32,8 +32,8 @@ class TestBookClubAPI(unittest.TestCase):
             "id": "club-1", 
             "name": "Test Club",
             "members": [{"id": 1, "name": "Test Member"}],
-            "activeSession": None,
-            "pastSessions": []
+            "active_session": None,
+            "past_sessions": []
         }
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -94,8 +94,9 @@ class TestBookClubAPI(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_put.return_value = mock_response
         
-        # Call the method
-        result = self.api.update_club("club-1", "Updated Club Name")
+        # Call the method with a dictionary instead of just a name string
+        update_data = {"name": "Updated Club Name"}
+        result = self.api.update_club("club-1", update_data)
         
         # Assertions
         self.assertTrue(result["success"])
@@ -103,7 +104,7 @@ class TestBookClubAPI(unittest.TestCase):
         mock_put.assert_called_once_with(
             "http://test-url.supabase.co/functions/v1/club",
             headers=self.api.headers,
-            json={"id": "club-1", "name": "Updated Club Name"}
+            json={"id": "club-1", **update_data}
         )
 
     @patch('requests.delete')
@@ -139,9 +140,9 @@ class TestBookClubAPI(unittest.TestCase):
             "id": 1,
             "name": "Test Member",
             "points": 100,
-            "numberOfBooksRead": 5,
+            "books_read": 5,
             "clubs": [{"id": "club-1", "name": "Test Club"}],
-            "shameSessions": []
+            "shame_clubs": []
         }
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -166,7 +167,7 @@ class TestBookClubAPI(unittest.TestCase):
         mock_response.json.return_value = {
             "success": True,
             "message": "Member created successfully",
-            "member": {"id": 1, "name": "New Member", "points": 0, "numberOfBooksRead": 0}
+            "member": {"id": 1, "name": "New Member", "points": 0, "books_read": 0}
         }
         mock_response.raise_for_status = Mock()
         mock_post.return_value = mock_response
@@ -175,7 +176,7 @@ class TestBookClubAPI(unittest.TestCase):
         member_data = {
             "name": "New Member",
             "points": 0,
-            "numberOfBooksRead": 0,
+            "books_read": 0,
             "clubs": ["club-1"]
         }
         
@@ -200,7 +201,7 @@ class TestBookClubAPI(unittest.TestCase):
             "success": True,
             "message": "Member updated successfully",
             "member": {"id": 1, "name": "Updated Member", "points": 150},
-            "clubsUpdated": True
+            "clubs_updated": True
         }
         mock_response.raise_for_status = Mock()
         mock_put.return_value = mock_response
@@ -218,7 +219,7 @@ class TestBookClubAPI(unittest.TestCase):
         # Assertions
         self.assertTrue(result["success"])
         self.assertEqual(result["member"]["name"], "Updated Member")
-        self.assertTrue(result["clubsUpdated"])
+        self.assertTrue(result["clubs_updated"])
         mock_put.assert_called_once_with(
             "http://test-url.supabase.co/functions/v1/member",
             headers=self.api.headers,
@@ -258,9 +259,9 @@ class TestBookClubAPI(unittest.TestCase):
             "id": "session-1",
             "club": {"id": "club-1", "name": "Test Club"},
             "book": {"id": 1, "title": "Test Book", "author": "Test Author"},
-            "dueDate": "2025-04-15",
+            "due_date": "2025-04-15",
             "discussions": [{"id": "disc-1", "title": "Chapter 1-3", "date": "2025-04-01"}],
-            "shameList": []
+            "shame_list": []
         }
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -298,7 +299,7 @@ class TestBookClubAPI(unittest.TestCase):
         session_data = {
             "club_id": "club-1",
             "book": {"title": "New Book", "author": "Author Name"},
-            "dueDate": "2025-05-15",
+            "due_date": "2025-05-15",
             "discussions": [
                 {"title": "First Discussion", "date": "2025-05-01"}
             ]
@@ -327,8 +328,7 @@ class TestBookClubAPI(unittest.TestCase):
             "updates": {
                 "book": True,
                 "session": True,
-                "discussions": False,
-                "shameList": False
+                "discussions": False
             }
         }
         mock_response.raise_for_status = Mock()
@@ -336,7 +336,7 @@ class TestBookClubAPI(unittest.TestCase):
         
         # Test data
         update_data = {
-            "dueDate": "2025-06-15",
+            "due_date": "2025-06-15",
             "book": {"edition": "Revised Edition"}
         }
         

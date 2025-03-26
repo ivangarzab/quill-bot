@@ -31,11 +31,11 @@ def setup_session_commands(bot):
         club_data = bot.api.get_club(club_id)
         
         # Check if there's an active session
-        if not club_data.get('activeSession'):
+        if not club_data.get('active_session'):
             await interaction.followup.send("There is no active reading session right now.")
             return None, None
             
-        return club_data, club_data['activeSession']
+        return club_data, club_data['active_session']
 
     @bot.tree.command(name="book", description="Show current book details")
     async def book_command(interaction: discord.Interaction):
@@ -76,7 +76,7 @@ def setup_session_commands(bot):
         if not session:
             return
             
-        due_date = session['dueDate']
+        due_date = session['due_date']
         
         embed = create_embed(
             title="📅 Due Date",
@@ -110,7 +110,7 @@ def setup_session_commands(bot):
             },
             {
                 "name": "Due Date",
-                "value": f"{session['dueDate']}",
+                "value": f"{session['due_date']}",
                 "inline": False
             }
         ]
